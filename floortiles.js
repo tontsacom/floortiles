@@ -102,15 +102,6 @@
 			this.width = Math.min(this.$element.width(), this.maxWidth);
 			var c = Math.ceil((this.width + this.gap) / this.tileSize.x);
 			this.columns = Math.max(Math.min(c, this.maxCol), this.minCol);
-			this.holes.length = 0;
-			this.spaces.length = 0;
-			for (var i = 0; i < this.columns; i++) {
-				this.spaces[i] = {
-					x: i,
-					y: 0,
-					v: 0
-				};
-			}
 
 			var wrapper = this.$element.find('.floortiles-wrapper'),
 				childs = wrapper.children(),
@@ -119,9 +110,19 @@
 				tileR,
 				pos,
 				posR,
-				sizeR;
+				sizeR,
+				saveTile;
 
-			this.sitAll();console.log(this.holes[0]);
+			this.sitAll();
+			for (var j = 1; this.holes.length > 0 && i < 50; i++) {
+				for (var j = 1; j < this.tiles.length; j++) {
+					if (this.tiles[j].i == this.holes[0].i) break;
+				}
+				saveTile = this.tiles[j];
+				this.tiles[j] = this.tiles[j - 1];
+				this.tiles[j - 1] = saveTile;
+				this.sitAll();
+			}
 
 			for (var i = 0; i < this.tiles.length; i++) {
 				pos = this.poses[i];
@@ -169,6 +170,16 @@
 		}
 
 		sitAll() {
+			this.holes.length = 0;
+			this.spaces.length = 0;
+			for (var i = 0; i < this.columns; i++) {
+				this.spaces[i] = {
+					x: i,
+					y: 0,
+					v: 0,
+					i: 0
+				};
+			}
 			this.poses.length = 0;
 			for (var i = 0; i < this.tiles.length; i++) {
 				this.poses.push(this.sit(this.tiles[i]));
@@ -185,7 +196,8 @@
 				findTile = {
 					x: 0,
 					y: this.maxSpaces(0, this.spaces.length),
-					v: this.maxSpacesV(0, this.spaces.length)
+					v: this.maxSpacesV(0, this.spaces.length),
+					i: tile.i
 				};
 
 				for (var i = 0; i < this.spaces.length; i++) {
@@ -193,13 +205,15 @@
 						this.holes.push({
 							x: this.spaces[i].x,
 							y: j,
-							v: j - this.spaces[i].y + this.spaces[i].v
+							v: j - this.spaces[i].y + this.spaces[i].v,
+							i: tile.i
 						});
 					};
 					this.spaces[i] = {
 						x: i,
 						y: findTile.y + sitTile.y,
-						v: findTile.v + sitTile.v
+						v: findTile.v + sitTile.v,
+						i: tile.i
 					};
 				};
 
@@ -214,7 +228,8 @@
 				spacesM[i] = {
 					x: i,
 					y: this.maxSpaces(i, i + sitTile.x),
-					v: this.maxSpacesV(i, i + sitTile.x)
+					v: this.maxSpacesV(i, i + sitTile.x),
+					i: tile.i
 				};
 			}
 
@@ -255,12 +270,18 @@
 				this.holes.splice(i, j);
 				for (; j < sitTile.x; j++) {
 					for (var k = this.spaces[findTile.x + j].y; k < findTile.y; k++) {
-						this.holes.push({x: this.spaces[findTile.x + j].x, y: k});
+						this.holes.push({
+							x: this.spaces[findTile.x + j].x,
+							y: k,
+							v: k, // надо разобраться с этим, ранее было пропущено определение v
+							i: tile.i
+						});
 					}
 					this.spaces[findTile.x + j] = {
 						x: this.spaces[findTile.x + j].x,
 						y: findTile.y + sitTile.y,
-						v: findTile.v + sitTile.v
+						v: findTile.v + sitTile.v,
+						i: tile.i
 					};
 				}
 				for (var k = 1; k < sitTile.y; k++) {
@@ -283,13 +304,16 @@
 					this.holes.push({
 						x: this.spaces[i].x,
 						y: j,
-						v: j + this.spaces[i].v - this.spaces[i].y
+						v: j + this.spaces[i].v - this.spaces[i].y,
+						i: tile.i
 					});
 				};
 				this.spaces[i] = {
 					x: i,
 					y: findTile.y + sitTile.y,
-					v: findTile.v + sitTile.v};
+					v: findTile.v + sitTile.v,
+					i: tile.i
+				};
 			};
 			this.holes.sort(this.compareH);
 			spacesM.length = 0;
