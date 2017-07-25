@@ -39,8 +39,10 @@
 			}
 
 			this.$element.wrapInner('<div class="floortiles-wrapper" style="position: relative;max-width: 100%;margin: 0 auto;" />');
+			this.tiles = [];
 			this.spaces = [];
 			this.holes = [];
+			this.poses = [];
 			for (var option in optionsDefault) {
 				this[option] = optionsDefault[option];
 			}
@@ -86,6 +88,17 @@
 
 		refresh() {
 
+			var childs = this.$element.children().children();
+			this.tiles.length = 0;
+			for (var i = 0; i < childs.length; i++) {
+				var size = this.minSizeTile(childs.eq(i).data('tile'));
+				this.tiles.push({
+					i: i,
+					x: size.x,
+					y: size.y
+				});
+			}
+
 			this.width = Math.min(this.$element.width(), this.maxWidth);
 			var c = Math.ceil((this.width + this.gap) / this.tileSize.x);
 			this.columns = Math.max(Math.min(c, this.maxCol), this.minCol);
@@ -107,10 +120,12 @@
 				pos,
 				posR,
 				sizeR;
-			for (var i = 0; i < childs.length; i++) {
-				tile = childs.eq(i).data('tile');
-				pos = this.sit(tile);
-				tile = this.boundSize(tile);
+
+			this.sitAll();console.log(this.holes[0]);
+
+			for (var i = 0; i < this.tiles.length; i++) {
+				pos = this.poses[i];
+				tile = this.boundSize(this.tiles[i]);
 				tileR = this.boundSizeR(tile);
 				posR = {
 					x: step.x * pos.x,
@@ -120,15 +135,15 @@
 					x: step.x * tileR.x - this.gap,
 					y: step.y * tileR.v - this.gap
 				};
-				this.tiled(childs.eq(i), {
-					index: i, 
+				this.tiled(childs.eq(this.tiles[i].i), {
+					index: this.tiles[i].i, 
 					tile: tile, 
 					pos: posR,
 					size: sizeR,
 					tileSize: this.tileSize
 				});
 				if (this.animate && this.nextStatus) {
-					childs.eq(i).animate(
+					childs.eq(this.tiles[i].i).animate(
 						{
 							width: sizeR.x + 'px',
 							height: sizeR.y +'px',
@@ -138,7 +153,7 @@
 						this.animateTime
 					);
 				} else {
-					childs.eq(i).css({
+					childs.eq(this.tiles[i].i).css({
 						position: 'absolute',
 						width: sizeR.x + 'px',
 						height: sizeR.y +'px',
@@ -151,6 +166,13 @@
 				width: (step.x * this.columns - this.gap) + 'px',
 				height: (step.y * this.maxSpacesV(0, this.columns) - this.gap) + 'px'
 			});
+		}
+
+		sitAll() {
+			this.poses.length = 0;
+			for (var i = 0; i < this.tiles.length; i++) {
+				this.poses.push(this.sit(this.tiles[i]));
+			}
 		}
 
 		sit(tile) {
@@ -302,16 +324,19 @@
 			};
 		}
 
-		boundSize(tile){
+		minSizeTile(tile) {
 			var size = this.minSize(tile, '1x1');
 			if (!size) return {
 				x: 1,
 				y: 1
 			};
-			var sizeM = this.tileLimit;
+			return size;
+		}
+
+		boundSize(tile){
 			return {
-				x: Math.min(size.x, sizeM.x),
-				y: Math.min(size.y, sizeM.y)
+				x: Math.min(tile.x, this.tileLimit.x),
+				y: Math.min(tile.y, this.tileLimit.y)
 			};
 		}
 
