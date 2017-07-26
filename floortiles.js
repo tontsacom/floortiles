@@ -9,7 +9,7 @@
 			x: 6,
 			y: 4
 		},
-		maxWidth: 800,
+		maxWidth: 1000,
 		gap: 3,
 		minCol: 2,
 		maxCol: 6,
@@ -113,16 +113,25 @@
 				sizeR,
 				saveTile;
 
+			var time = performance.now();
+
 			this.sitAll();
-			for (var j = 1; this.holes.length > 0 && i < 50; i++) {
+			for (var i = 0; this.holes.length > 0 && i < 100; i++) {
 				for (var j = 1; j < this.tiles.length; j++) {
 					if (this.tiles[j].i == this.holes[0].i) break;
-				}
-				saveTile = this.tiles[j];
-				this.tiles[j] = this.tiles[j - 1];
-				this.tiles[j - 1] = saveTile;
+				};
+				while (j--) {
+					if (this.tiles[j].x != this.tiles[j + 1].x) break;
+				} 
+				saveTile = this.tiles[j + 1];
+				this.tiles[j + 1] = this.tiles[j];
+				this.tiles[j] = saveTile;
 				this.sitAll();
 			}
+
+			time = performance.now() - time;
+			console.log('Время выполнения = ', time);
+			console.log(i);
 
 			for (var i = 0; i < this.tiles.length; i++) {
 				pos = this.poses[i];
@@ -288,7 +297,7 @@
 					for (; i < this.holes.length; i++) {
 						if (this.holes[i].x == findTile.x && this.holes[i].y == findTile.y + k) break;
 					}
-					for (var j = 1; j < sitTile.x; j++) {
+					for (var j = 1; j < sitTile.x && i + j < this.holes.length; j++) {
 						if (this.holes[i + j].x != findTile.x + j || this.holes[i + j].y != findTile.y + k) break;
 					}
 					this.holes.splice(i, j);
