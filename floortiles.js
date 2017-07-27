@@ -48,6 +48,7 @@
 			}
 
 			this.reset(options)
+			this.nextStatus = true;
 
 		}
 
@@ -82,13 +83,31 @@
 			}
 			
 			this.refresh();
-			this.nextStatus = true;
 
 		}
 
 		refresh() {
 
-			var childs = this.$element.children().children();
+			if (typeof this.maxWidth == 'number') {
+				this.width = Math.min(this.$element.width(), this.maxWidth);
+			} else if (this.maxWidth == 'none') {
+				this.width = this.$element.width();
+			} else {
+				throw new Error('Wrong value of property maxWidth in jQuery.floortiles');
+			}
+			this.columns = Math.max(Math.min(Math.ceil((this.width + this.gap) / this.tileSize.x), this.maxCol), this.minCol);
+
+			var wrapper = this.$element.find('.floortiles-wrapper'),
+				childs = wrapper.children(),
+				step = this.step(),
+				tile,
+				tileR,
+				pos,
+				posR,
+				sizeR,
+				saveTile,
+				time;
+
 			this.tiles.length = 0;
 			for (var i = 0; i < childs.length; i++) {
 				var size = this.minSizeTile(childs.eq(i).data('tile'));
@@ -99,21 +118,7 @@
 				});
 			}
 
-			this.width = Math.min(this.$element.width(), this.maxWidth);
-			var c = Math.ceil((this.width + this.gap) / this.tileSize.x);
-			this.columns = Math.max(Math.min(c, this.maxCol), this.minCol);
-
-			var wrapper = this.$element.find('.floortiles-wrapper'),
-				childs = wrapper.children(),
-				step = this.step(),
-				tile,
-				tileR,
-				pos,
-				posR,
-				sizeR,
-				saveTile;
-
-			var time = performance.now();
+			if (!this.debug) time = performance.now();
 
 			this.sitAll();
 			for (var i = 0; this.holes.length > 0 && i < 100; i++) {
@@ -129,9 +134,13 @@
 				this.sitAll();
 			}
 
-			time = performance.now() - time;
-			console.log('Время выполнения = ', time);
-			console.log(i);
+			if (!this.debug) {
+				time = performance.now() - time;
+				this.debug = {
+					iteration: i,
+					time: time
+				}
+			};
 
 			for (var i = 0; i < this.tiles.length; i++) {
 				pos = this.poses[i];
