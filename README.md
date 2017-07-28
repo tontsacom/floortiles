@@ -19,10 +19,10 @@ You only need to specify the dimensions of the blocks in the "axb" format in the
 <script type="text/javascript">
 	$.noConflict();
 	jQuery(document).ready(function($) {
-
-	$('.floor').floortiles({
-		tileSize: '200x150'
-	});
+		$('.floor').floortiles({
+			tileSize: '200x150'
+		});
+	})
 </script>
 ```
 
@@ -35,6 +35,19 @@ You only need to specify the dimensions of the blocks in the "axb" format in the
 - `minCol`: minimum number of columns,
 - `animate`: (boolean),
 - `animateTime`: (in ms),
-- `delayResizeTime`: (in ms).
+- `delayResizeTime`: (in ms),
+- `tiled`: callback function (el, ui) - triggered when a tile is sited on your place:
+  el: a tile (jQuery-node),
+  ui: object {index: (from 0), tile: {x, y}, pos: {x, y}, size: {x, y}}.
+  Code examples:
+  Initialize the FloorTiles with the create callback specified:
+
+```js    
+$('.floor').floortiles({
+	tiled: function (el, ui) {
+		el.html(ui.index + 1).wrapInner('<div />');
+	}
+});
+```
 
 #[Demo](https://tontsacom.github.io/floortiles/)
