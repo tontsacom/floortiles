@@ -27,10 +27,10 @@ body {
 	margin: 10px auto;
 	padding: 5px 10px;
 }
-.floortiles [data-tile] {
+.floortiles-wrapper [data-tile] {
 	background: #131313;
 }
-.floortiles [data-tile] > div {
+.floortiles-wrapper [data-tile] > div {
 	position: absolute;
 	color: #dbdbdb;
 	width: 40px;

@@ -22,78 +22,70 @@
 	}
 
 	class floortiles {
-
 		constructor(element, options) {
-
-			this.nextStatus = false;
 			this.$element = $(element);
 
 			var childs = this.$element.children();
-			if (childs.length == 0) throw new Error('Плитки отсутствуют in jQuery.floortiles');
-			if (!childs.eq(0).data('tile')) throw new Error('Не указан размер плитки в элементе 1 in jQuery.floortiles');
-
+			if (childs.length == 0) $.error('Плитки отсутствуют in jQuery.floortiles');
+			if (!childs.eq(0).data('tile')) $.error('Не указан размер плитки в элементе 0 in jQuery.floortiles');
 			var tag = childs.get(0).tagName;
 			for (var i = 1; i < childs.length; i++) {
-				if (!childs.eq(i).data('tile')) throw new Error('Не указан размер плитки в элементе ' + (i + 1) + ' in jQuery.floortiles');
-				if (childs.get(i).tagName != tag) throw new Error('Не однородный по тегу состав плиток in jQuery.floortiles');
+				if (!childs.eq(i).data('tile')) $.error('Не указан размер плитки в элементе ' + i + ' in jQuery.floortiles');
+				if (childs.get(i).tagName != tag) $.error('Не однородный по тегу состав плиток in jQuery.floortiles');
 			}
-
+			childs.css({
+				position: 'absolute'
+			});
 			this.$element.wrapInner('<div class="floortiles-wrapper" style="position: relative;max-width: 100%;margin: 0 auto;" />');
+
 			this.tiles = [];
 			this.spaces = [];
 			this.holes = [];
 			this.poses = [];
-			for (var option in optionsDefault) {
-				this[option] = optionsDefault[option];
-			}
+			$.extend(this, optionsDefault);
 
+			this.nextStatus = false;
 			this.reset(options)
 			this.nextStatus = true;
+		}
 
+		destructor() {
+			this.$element.html(this.$element.children().html());
+			this.$element.children().removeAttr('style');
 		}
 
 		reset(options) {
-
 			for (var option in options) {
-
 				if (option in optionsDefault) {
-
 					switch (option) {
-
 						case 'tileSize':
 							var size = this.minSize(options[option], '40x30');
-							if (!size) throw new Error('Wrong value ' + options[option] + ' of property ' + option + ' in jQuery.floortiles');
+							if (!size) $.error('Wrong value ' + options[option] + ' of property ' + option + ' in jQuery.floortiles');
 							this[option] = size;
 						break;
-
 						case 'tileLimit':
 							var size = this.size(options[option]);
-							if (!size) throw new Error('Wrong value ' + options[option] + ' of property ' + option + ' in jQuery.floortiles');
+							if (!size) $.error('Wrong value ' + options[option] + ' of property ' + option + ' in jQuery.floortiles');
 							this[option] = size;
 						break;
-
 						default:
 							this[option] = options[option];
-
 					}
-
 				} else {
-					throw new Error('Undefined property ' + option + ' in jQuery.floortiles');
+					$.error('Undefined property ' + option + ' in jQuery.floortiles');
 				}
 			}
 			
 			this.refresh();
-
 		}
 
 		refresh() {
-
 			if (typeof this.maxWidth == 'number') {
 				this.width = Math.min(this.$element.width(), this.maxWidth);
 			} else if (this.maxWidth == 'none') {
 				this.width = this.$element.width();
 			} else {
-				throw new Error('Wrong value of property maxWidth in jQuery.floortiles');
+				$.error('Wrong value of property maxWidth in jQuery.floortiles');
 			}
 			this.columns = Math.max(Math.min(Math.ceil((this.width + this.gap) / this.tileSize.x), this.maxCol), this.minCol);
 
@@ -154,6 +146,7 @@
 					x: step.x * tileR.x - this.gap,
 					y: step.y * tileR.v - this.gap
 				};
+
 				this.tiled(childs.eq(this.tiles[i].i), {
 					index: this.tiles[i].i, 
 					tile: tile, 
@@ -173,7 +166,6 @@
 					);
 				} else {
 					childs.eq(this.tiles[i].i).css({
-						position: 'absolute',
 						width: sizeR.x + 'px',
 						height: sizeR.y +'px',
 						left: posR.x + 'px',
@@ -336,7 +328,10 @@
 			this.holes.sort(this.compareH);
 			spacesM.length = 0;
 			return findTile;
+		}
 
+		onSit(el, ui) {
+			console.log(this);console.log(el);console.log(ui);
 		}
 
 		step(){
@@ -439,38 +434,59 @@
 				return -1;
 			};
 		}
-
 	}
 
-	$.fn.floortiles = function(options) {
+	var methods = {
+		init: function(options) {
+			return this.each(function() {
+				var $this = $(this),
+					data = $this.data('floortiles'),
+					timeout;
 
-		return this.each(function() {
+				if (!data) {
+					data = new floortiles(this, options);
+					$(window).on('resize.floortiles', function () {
+						if (timeout) clearTimeout(timeout);
+						timeout = setTimeout(function() {
+								data.refresh();
+							},
+							data.delayResizeTime);
+					});
+				} else {
+					data.reset(options);
+				}
 
-			var $this = $(this),
-				data = $this.data('floortiles'),
-				timeout;
+				$this.data('floortiles', data);
+			});
+		},
 
-			if (!data) {
+		refresh: function( ) {
+			return this.each(function() {
+				var $this = $(this),
+					data = $this.data('floortiles');
+				data.refresh();
+			});
+		},
 
-				data = new floortiles(this, options);
-				$(window).on('resize.floortiles', function () {
-					if (timeout) clearTimeout(timeout);
-					timeout = setTimeout(function() {
-							data.refresh();
-						},
-						data.delayResizeTime);
-				});
+		destroy: function( ) {
+			return this.each(function() {
+				var $this = $(this),
+					data = $this.data('floortiles');
+				$(window).off('.floortiles');
+				data.destructor();
+				$this.removeData('floortiles');
+			});
+		}
+	};
 
-			} else {
-
-				data.reset(options);
-
-			}
-
-			$this.data('floortiles', data);
-
-		})
-
+	$.fn.floortiles = function(method) {
+		if (methods[method]) {
+			return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
+		} else if (typeof method === 'object' || !method) {
+			return methods.init.apply(this, arguments);
+		} else {
+			$.error('Метод с именем ' + method + ' не существует для jQuery.floortiles' );
+		}
 	};
 
 })(jQuery);
