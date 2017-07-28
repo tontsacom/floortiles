@@ -15,7 +15,7 @@ You only need to specify the dimensions of the blocks in the "axb" format in the
 	<div data-tile="2x1"></div>
 </div>
 ...
-<script src="floortiles.js" type="text/javascript"></script>
+<script src="floortiles.min.js" type="text/javascript"></script>
 <script type="text/javascript">
 	$.noConflict();
 	jQuery(document).ready(function($) {
