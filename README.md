@@ -37,10 +37,10 @@ You only need to specify the dimensions of the blocks in the "axb" format in the
 - `animateTime`: (in ms),
 - `delayResizeTime`: (in ms),
 - `tiled`: callback function (el, ui) - triggered when a tile is sited on your place:
--- el: a tile (jQuery-node),
--- ui: object {index: (from 0), tile: {x, y}, pos: {x, y}, size: {x, y}}.
--- Code examples:
--- Initialize the FloorTiles with the create callback specified:
+  - el: a tile (jQuery-node),
+  - ui: object {index: (from 0), tile: {x, y}, pos: {x, y}, size: {x, y}}.
+  - Code examples:
+  - Initialize the FloorTiles with the create callback specified:
 
 ```js    
 $('.floor').floortiles({
