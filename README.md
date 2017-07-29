@@ -3,11 +3,15 @@
 [us]: US.png
 ![][us]
 
-FloorTiles is a jQuery plugin for layout of the block elements (div, li, img, etc.) with integer (multiple) sizes without holes.
+FloorTiles is an lightweight jQuery plug-in for native layout inside a rectangular area of ​​tiles - block elements (div, li, img, etc.) with integer sizes - without voids.
 
-You only need to specify the dimensions of the blocks in the "AxB" format in the data-tile attribute of the block elements.
+You only need to specify the dimensions of each tile in the "AxB" format. The plug-in will place your tiles, maximally respecting their original order.
 
-[ru]: US.png
+The intended application area of ​​the plug-in is the compact placement of preview images of user materials that have different visual formats on the screen, similar to placing a mosaic tile on the floor. In this case, a structured joint between the tiles is formed, arranged along a rectangular lattice. The size of the seam and the dimensions of the grate are controlled by the user through the options-options of the plug-in.
+
+Look at [DEMO](https://tontsacom.github.io/floortiles/) to illustrate how the plugin works.
+
+[ru]: RU.png
 ![][ru]
 
 FloorTiles это "легкий" jQuery-плагин для нативной раскладки внутри прямоугольной области плиток - блочных элементов (div, li, img и т.п.) с целочисленными размерами - без образования пустот.
