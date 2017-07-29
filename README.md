@@ -20,7 +20,7 @@ FloorTiles это "легкий" jQuery-плагин для нативной р�
 
 Посмотрите [ДЕМО](https://tontsacom.github.io/floortiles/) для иллюстрации работы плагина.
 
-#Usage
+# Usage
 
 ```html    
 <div class="floor">
@@ -42,7 +42,7 @@ FloorTiles это "легкий" jQuery-плагин для нативной р�
 </script>
 ```
 
-#Settings
+# Settings
 
 - `tileSize`: maximum size (in px) of tiles,
 - `tileLimit`: maximum size (in units 1x1) of tiles,
