@@ -2,6 +2,7 @@
 
 [us]: US.png
 ![][us]
+
 FloorTiles is a jQuery plugin for layout of the block elements (div, li, img, etc.) with integer (multiple) sizes without holes.
 
 You only need to specify the dimensions of the blocks in the "AxB" format in the data-tile attribute of the block elements.
