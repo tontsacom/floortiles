@@ -2,8 +2,6 @@
 
 ![uk](https://user-images.githubusercontent.com/30435087/28743976-dacfbdbe-7467-11e7-9e5a-6dad3bda90e3.png)
 
-<img src="https://user-images.githubusercontent.com/30435087/28743976-dacfbdbe-7467-11e7-9e5a-6dad3bda90e3.png" />
-
 FloorTiles is an lightweight jQuery plug-in for native layout inside a rectangular area of ​​tiles - block elements (div, li, img, etc.) with integer sizes - without voids.
 
 You only need to specify the dimensions of each tile in the "AxB" format. The plug-in will place your tiles, maximally respecting their original order.
@@ -67,3 +65,5 @@ $('.floor').floortiles({
 	}
 });
 ```
+
+<a href="#floortiles">go to top</a>
