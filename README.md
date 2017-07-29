@@ -1,4 +1,5 @@
 # FloorTiles
+<a href="#Плагин-floortiles">перевод по-русски</a>
 
 FloorTiles is an lightweight jQuery plug-in for native layout inside a rectangular area of ​​tiles - block elements (div, li, img, etc.) with integer sizes - without voids.
 
@@ -54,9 +55,10 @@ $('.floor').floortiles({
 });
 ```
 
-<a href="#floortiles">go to top</a>
+
 
 # Плагин FloorTiles
+<a href="#floortiles">go to English version</a>
 
 FloorTiles это "легкий" jQuery-плагин для нативной раскладки внутри прямоугольной области плиток - блочных элементов (div, li, img и т.п.) с целочисленными размерами - без образования пустот.
 
