@@ -1,6 +1,6 @@
 # FloorTiles
 
-![](US.png)
+![uk](https://user-images.githubusercontent.com/30435087/28743976-dacfbdbe-7467-11e7-9e5a-6dad3bda90e3.png)
 
 FloorTiles is an lightweight jQuery plug-in for native layout inside a rectangular area of ​​tiles - block elements (div, li, img, etc.) with integer sizes - without voids.
 
@@ -10,8 +10,7 @@ The intended application area of ​​the plug-in is the compact placement of p
 
 Look at [DEMO](https://tontsacom.github.io/floortiles/) to illustrate how the plugin works.
 
-[ru]: RU.png
-![][ru]
+![ru](https://user-images.githubusercontent.com/30435087/28743977-dacff6ee-7467-11e7-8bc1-a3d07801823c.png)
 
 FloorTiles это "легкий" jQuery-плагин для нативной раскладки внутри прямоугольной области плиток - блочных элементов (div, li, img и т.п.) с целочисленными размерами - без образования пустот.
 
