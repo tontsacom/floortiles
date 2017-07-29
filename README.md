@@ -1,7 +1,6 @@
 # FloorTiles
 
-[us]: US.png
-![][us]
+![](US.png)
 
 FloorTiles is an lightweight jQuery plug-in for native layout inside a rectangular area of ​​tiles - block elements (div, li, img, etc.) with integer sizes - without voids.
 
