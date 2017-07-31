@@ -21,6 +21,7 @@
 		animate: true,
 		animateTime: 500,
 		delayResizeTime: 500,
+		debug: false, // only for debug purpose
 		tiled: function(el, ui) {
 // el - element, ui - {index: (from 0), tile: {x, y}, pos: {x, y}, size: {x, y}}
 		}
@@ -115,29 +116,31 @@
 				});
 			}
 
-			if (!this.debug) time = performance.now();
+			if (this.debug) time = performance.now();
 
 			this.sitAll();
-			for (var i = 0; this.holes.length > 0 && i < 100; i++) {
+			for (var i = 0; this.holes.length > 0 && i < 5; i++) {
 				for (var j = 1; j < this.tiles.length; j++) {
 					if (this.tiles[j].i == this.holes[0].i) break;
 				};
+				var k = j;
 				while (j--) {
 					if (this.tiles[j].x != this.tiles[j + 1].x) break;
 				} 
-				saveTile = this.tiles[j + 1];
-				this.tiles[j + 1] = this.tiles[j];
+				saveTile = this.tiles[k];
+				this.tiles[k] = this.tiles[j];
 				this.tiles[j] = saveTile;
+				if (k - 1 > j) this.subSort(j, k - 1);
+
+console.log(this.tiles[0].i + '/' + this.tiles[1].i + '/' + this.tiles[2].i + '/' + this.tiles[3].i);
+
 				this.sitAll();
 			}
 
-			if (!this.debug) {
-				time = performance.now() - time;
-				this.debug = {
-					iteration: i,
-					time: time
-				}
-			};
+			if (this.debug) console.log({
+				iteration: i,
+				time: performance.now() - time
+			}, this);
 
 			for (var i = 0; i < this.tiles.length; i++) {
 				pos = this.poses[i];
@@ -416,6 +419,14 @@
 			return m;
 		}
 
+		subSort(start, end){
+			var sub = this.tiles.slice(start, end + 1).sort(this.compareS);
+			for (var i = start; i < end + 1; i++) {
+				this.tiles[i] = sub[i - start];
+			};
+			sub.length = 0;
+		}
+
 		compareH(a, b){
 			if (a.y > b.y) {
 				return 1;
@@ -434,6 +445,18 @@
 			} else if (a.x < b.x) {
 				return -1;
 			} else if (a.y > b.y) {
+				return 1;
+			} else {
+				return -1;
+			};
+		}
+
+		compareS(a, b){
+			if (a.y < b.y) {
+				return 1;
+			} else if (a.y > b.y) {
+				return -1;
+			} else if (a.i > b.i) {
 				return 1;
 			} else {
 				return -1;
