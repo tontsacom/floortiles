@@ -103,8 +103,9 @@
 				pos,
 				posR,
 				sizeR,
+				time/*,
 				saveTile,
-				time;
+				sub = []*/;
 
 			this.tiles.length = 0;
 			for (var i = 0; i < childs.length; i++) {
@@ -119,26 +120,38 @@
 			if (this.debug) time = performance.now();
 
 			this.sitAll();
-			for (var i = 0; this.holes.length > 0 && i < 5; i++) {
-				for (var j = 1; j < this.tiles.length; j++) {
-					if (this.tiles[j].i == this.holes[0].i) break;
-				};
-				var k = j;
-				while (j--) {
-					if (this.tiles[j].x != this.tiles[j + 1].x) break;
-				} 
-				saveTile = this.tiles[k];
-				this.tiles[k] = this.tiles[j];
-				this.tiles[j] = saveTile;
-				if (k - 1 > j) this.subSort(j, k - 1);
 
-console.log(this.tiles[0].i + '/' + this.tiles[1].i + '/' + this.tiles[2].i + '/' + this.tiles[3].i);
+this.consoleArr(this.tiles, 'i');
 
+			for (var iteration = 0; this.holes.length > 0 && iteration < 100; iteration++) {
+				for (var i = 0; i < this.holes.length; i++) {
+					for (var j = 1; j < this.tiles.length; j++) {
+						if (this.tiles[j].i == this.holes[i].i) break;
+					};
+					for (var k = 1; i + k < this.holes.length; k++) {
+						// возможно здесь надо добавить условие на проверку не только обычных дырок, но и "выглядывающих" дырок
+						if (this.holes[i + k].x != this.holes[i].x + k || this.holes[i + k].y != this.holes[i].y) break;
+					};
+					for (var l = j + 1, m = 0, n = 0; l < this.tiles.length; l++) {
+						if (this.tiles[l].x == k) break;
+						if (this.tiles[l].x < k && m < this.tiles[l].x) {
+							m = this.tiles[l].x;
+							n = l;
+						};
+					};
+					if (l == this.tiles.length) l = n;
+					if (l > 0) break; // здесь прерываем - нашли плитку, которую можно вставить в дырку[i]
+				}
+				if (l == 0) break; // здесь прерываем - нет плитки, которую можно вставить в какую-либо дырку
+				this.tiles.splice(j, 0, this.tiles.splice(l, 1)[0]);
 				this.sitAll();
+
+this.consoleArr(this.tiles, 'i');
+
 			}
 
 			if (this.debug) console.log({
-				iteration: i,
+				iteration: iteration,
 				time: performance.now() - time
 			}, this);
 
@@ -418,7 +431,7 @@ console.log(this.tiles[0].i + '/' + this.tiles[1].i + '/' + this.tiles[2].i + '/
 			};
 			return m;
 		}
-
+/*
 		subSort(start, end){
 			var sub = this.tiles.slice(start, end + 1).sort(this.compareS);
 			for (var i = start; i < end + 1; i++) {
@@ -426,7 +439,7 @@ console.log(this.tiles[0].i + '/' + this.tiles[1].i + '/' + this.tiles[2].i + '/
 			};
 			sub.length = 0;
 		}
-
+*/
 		compareH(a, b){
 			if (a.y > b.y) {
 				return 1;
@@ -450,7 +463,7 @@ console.log(this.tiles[0].i + '/' + this.tiles[1].i + '/' + this.tiles[2].i + '/
 				return -1;
 			};
 		}
-
+/*
 		compareS(a, b){
 			if (a.y < b.y) {
 				return 1;
@@ -462,6 +475,15 @@ console.log(this.tiles[0].i + '/' + this.tiles[1].i + '/' + this.tiles[2].i + '/
 				return -1;
 			};
 		}
+*/
+		consoleArr(arr, el){
+			for (var i = 0, s = ''; i < arr.length; i++) {
+				if (i > 0) s += '/';
+				s += arr[i][el];
+			};
+			console.log(s);
+		}
+
 	}
 
 	var methods = {
