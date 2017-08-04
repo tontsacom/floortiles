@@ -23,7 +23,7 @@
 		delayResizeTime: 500,
 		debug: false, // only for debug purpose
 		tiled: function(el, ui) {
-// el - element, ui - {index: (from 0), tile: {x, y}, pos: {x, y}, size: {x, y}}
+// el - element, ui - {index: (from 0), tile: {x, y}, pos: {x, y}, size: {x, y}, tileSize: {x, y}}
 		}
 	}
 
@@ -32,12 +32,12 @@
 			this.$element = $(element);
 
 			var childs = this.$element.children();
-			if (childs.length == 0) $.error('Плитки отсутствуют in jQuery.floortiles');
-			if (!childs.eq(0).data('tile')) $.error('Не указан размер плитки в элементе 0 in jQuery.floortiles');
+			if (childs.length == 0) $.error('No tiles in jQuery.floortiles');
+			if (!childs.eq(0).data('tile')) $.error('The tile size of the element 0 in jQuery.floortiles is not specified');
 			var tag = childs.get(0).tagName;
 			for (var i = 1; i < childs.length; i++) {
-				if (!childs.eq(i).data('tile')) $.error('Не указан размер плитки в элементе ' + i + ' in jQuery.floortiles');
-				if (childs.get(i).tagName != tag) $.error('Не однородный по тегу состав плиток in jQuery.floortiles');
+				if (!childs.eq(i).data('tile')) $.error('The tile size of the element ' + i + ' in jQuery.floortiles is not specified');
+				if (childs.get(i).tagName != tag) $.error('Not the same tags in tiles in jQuery.floor');
 			}
 			childs.css({
 				position: 'absolute'
@@ -103,9 +103,7 @@
 				pos,
 				posR,
 				sizeR,
-				time/*,
-				saveTile,
-				sub = []*/;
+				time;
 
 			this.tiles.length = 0;
 			for (var i = 0; i < childs.length; i++) {
@@ -117,17 +115,17 @@
 				});
 			}
 
-			if (this.debug) time = performance.now();
+			if (this.debug) time = performance.now(); // only for debug purpose
 
 			this.sitAll();
+			this.consoleArr(this.tiles, 'i'); // only for debug purpose
 
-this.consoleArr(this.tiles, 'i');
+			for (var iteration = 0, i = 0; this.holes.length > 0 && iteration < 100; iteration++) {
+				for (var j = 1; j < this.tiles.length; j++) {
+					if (this.tiles[j].i == this.holes[i].i) break;
+				};
 
-			for (var iteration = 0; this.holes.length > 0 && iteration < 100; iteration++) {
-				for (var i = 0; i < this.holes.length; i++) {
-					for (var j = 1; j < this.tiles.length; j++) {
-						if (this.tiles[j].i == this.holes[i].i) break;
-					};
+				for (; i < this.holes.length; i++) {
 					for (var k = 1; i + k < this.holes.length; k++) {
 						// возможно здесь надо добавить условие на проверку не только обычных дырок, но и "выглядывающих" дырок
 						if (this.holes[i + k].x != this.holes[i].x + k || this.holes[i + k].y != this.holes[i].y) break;
@@ -141,16 +139,21 @@ this.consoleArr(this.tiles, 'i');
 					};
 					if (l == this.tiles.length) l = n;
 					if (l > 0) break; // здесь прерываем - нашли плитку, которую можно вставить в дырку[i]
-				}
+/*
+					console.log(j, l, i, this.holes[i], this.poses);
+					l = 0;
+					break;
+*/
+				};
 				if (l == 0) break; // здесь прерываем - нет плитки, которую можно вставить в какую-либо дырку
-				this.tiles.splice(j, 0, this.tiles.splice(l, 1)[0]);
+
+				subSort(this.tiles, j, l, this.tiles[l].x);
 				this.sitAll();
 
-this.consoleArr(this.tiles, 'i');
-
+				this.consoleArr(this.tiles, 'i'); // only for debug purpose
 			}
 
-			if (this.debug) console.log({
+			if (this.debug) console.log({ // only for debug purpose
 				iteration: iteration,
 				time: performance.now() - time
 			}, this);
@@ -198,6 +201,24 @@ this.consoleArr(this.tiles, 'i');
 				width: (step.x * this.columns - this.gap) + 'px',
 				height: (step.y * this.maxSpacesV(0, this.columns) - this.gap) + 'px'
 			});
+
+			function subSort(arr, start, end, x){
+				var sub = arr.slice(start, end + 1).sort(compare),
+					i = sub.length;
+				while (i--) {
+					arr[start + i] = sub[i];
+				}
+
+				function compare(a, b){
+					if ((a.x == x && b.x == x) || (a.x != x && b.x != x)) {
+						return a.i - b.i;
+					} else if (a.x == x) {
+						return -1;
+					} else {
+						return 1;
+					};
+				}
+			}
 		}
 
 		sitAll() {
@@ -222,7 +243,6 @@ this.consoleArr(this.tiles, 'i');
 				findTile;
 
 			if (sitTile.x >= this.columns) {
-
 				sitTile = this.boundSizeR(sitTile);
 				findTile = {
 					x: 0,
@@ -248,9 +268,8 @@ this.consoleArr(this.tiles, 'i');
 					};
 				};
 
-				this.holes.sort(this.compareH);
+				this.holes.sort(compareH);
 				return findTile;
-
 			}
 
 			sitTile = this.boundSizeR(sitTile);
@@ -264,7 +283,7 @@ this.consoleArr(this.tiles, 'i');
 				};
 			}
 
-			spacesM.sort(this.compareH);
+			spacesM.sort(compareH);
 			var holesM = [];
 			for (var i = 0; i < this.holes.length; i++) {
 				var base = this.holes[i];
@@ -277,7 +296,7 @@ this.consoleArr(this.tiles, 'i');
 
 			var l = holesM.length;
 			if (l > 0 && sitTile.y > 1) {
-				holesM.sort(this.compareV);
+				holesM.sort(compareV);
 				for (var i = 0; i < l - sitTile.y + 1; i++) {
 					var base = holesM[i];
 					for (var j = 1; j < sitTile.y; j++) {
@@ -286,11 +305,10 @@ this.consoleArr(this.tiles, 'i');
 					if (j == sitTile.y) holesM.push(base);
 				}
 				holesM.splice(0, l);
-				holesM.sort(this.compareH);
+				holesM.sort(compareH);
 			}
 
-			if (holesM.length > 0 && this.compareH(holesM[0], spacesM[0]) < 0) {
-
+			if (holesM.length > 0 && compareH(holesM[0], spacesM[0]) < 0) {
 				findTile = holesM[0];
 				for (var i = 0; i < this.holes.length; i++) {
 					if (this.holes[i].x == findTile.x && this.holes[i].y == findTile.y) break;
@@ -324,9 +342,8 @@ this.consoleArr(this.tiles, 'i');
 					}
 					this.holes.splice(i, j);
 				}
-				this.holes.sort(this.compareH);
+				this.holes.sort(compareH);
 				return findTile;
-
 			}
 
 			findTile = spacesM[0];
@@ -346,15 +363,31 @@ this.consoleArr(this.tiles, 'i');
 					i: tile.i
 				};
 			};
-			this.holes.sort(this.compareH);
+			this.holes.sort(compareH);
 			spacesM.length = 0;
 			return findTile;
-		}
 
+			function compareH(a, b){
+				if (a.y != b.y) {
+					return a.y - b.y;
+				} else {
+					return a.x - b.x;
+				};
+			}
+
+			function compareV(a, b){
+				if (a.x != b.x) {
+					return a.x - b.x;
+				} else {
+					return a.y - b.y;
+				};
+			}
+		}
+/*
 		onSit(el, ui) {
 			console.log(this);console.log(el);console.log(ui);
 		}
-
+*/
 		step(){
 			var w = Math.min(Math.round(((this.width + this.gap) / this.columns) - this.gap), this.tileSize.x);
 			return {
@@ -431,52 +464,8 @@ this.consoleArr(this.tiles, 'i');
 			};
 			return m;
 		}
-/*
-		subSort(start, end){
-			var sub = this.tiles.slice(start, end + 1).sort(this.compareS);
-			for (var i = start; i < end + 1; i++) {
-				this.tiles[i] = sub[i - start];
-			};
-			sub.length = 0;
-		}
-*/
-		compareH(a, b){
-			if (a.y > b.y) {
-				return 1;
-			} else if (a.y < b.y) {
-				return -1;
-			} else if (a.x > b.x) {
-				return 1;
-			} else {
-				return -1;
-			};
-		}
 
-		compareV(a, b){
-			if (a.x > b.x) {
-				return 1;
-			} else if (a.x < b.x) {
-				return -1;
-			} else if (a.y > b.y) {
-				return 1;
-			} else {
-				return -1;
-			};
-		}
-/*
-		compareS(a, b){
-			if (a.y < b.y) {
-				return 1;
-			} else if (a.y > b.y) {
-				return -1;
-			} else if (a.i > b.i) {
-				return 1;
-			} else {
-				return -1;
-			};
-		}
-*/
-		consoleArr(arr, el){
+		consoleArr(arr, el){ // only for debug purpose
 			for (var i = 0, s = ''; i < arr.length; i++) {
 				if (i > 0) s += '/';
 				s += arr[i][el];
@@ -495,7 +484,7 @@ this.consoleArr(this.tiles, 'i');
 
 				if (!data) {
 					data = new floortiles(this, options);
-					$(window).on('resize.floortiles', function () {
+					$(window).on('resize.floortiles', function() {
 						if (timeout) clearTimeout(timeout);
 						timeout = setTimeout(function() {
 								data.refresh();
@@ -510,7 +499,7 @@ this.consoleArr(this.tiles, 'i');
 			});
 		},
 
-		refresh: function( ) {
+		refresh: function() {
 			return this.each(function() {
 				var $this = $(this),
 					data = $this.data('floortiles');
@@ -518,7 +507,7 @@ this.consoleArr(this.tiles, 'i');
 			});
 		},
 
-		destroy: function( ) {
+		destroy: function() {
 			return this.each(function() {
 				var $this = $(this),
 					data = $this.data('floortiles');
