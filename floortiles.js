@@ -104,6 +104,7 @@
 				posR,
 				sizeR,
 				copy = [],
+				variants = [],
 				time;
 
 			this.tiles.length = 0;
@@ -166,32 +167,56 @@
 						this.tiles[j + k] = copy[k];
 					};
 					copy.length = 0;
-					this.sitAll();
 
 				} else {
 
 					// нет плитки, которую можно вставить в дырку
-					console.log(j, k, l, m, n);
-					if (++i >= this.holes.length) break;
+					l = this.holes[i].y;
+					for (var m = 0; m < j; m++) {
+						copy.push({
+							i: this.tiles[m].i,
+							y: this.poses[m].y,
+							y2: this.poses[m].y + this.tiles[m].y
+						});
+					}
+
+					// определение плитки, с которой надо начинать новую перестановку
+					n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
+					while (n[0].y < l) {
+						l = n[0].y;
+						n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
+					}
+					m = n[0].i;
+					copy.length = 0;
+
+					// перестановка плиток снизу-вверх с "отскоком"
+					while (j--) {
+						if (this.tiles[j + 1].x != this.tiles[j].x) this.tiles.splice(j, 0, this.tiles.splice(j + 1, 1)[0]);
+						if (this.tiles[j + 1].i == m) break;
+					};
 
 				}
-/*
-				if (l > 0) break; // здесь прерываем - нашли плитку, которую можно вставить в дырку[i]
-					k = this.holes[i].y;
-					m = j;
-					while (m--) {
-						console.log(m, this.poses[m]);
-					};
-					while (j--) {console.log(this.tiles[j]);
-						if (this.tiles[j + 1].x != this.tiles[j].x || this.tiles[j + 1].y > this.tiles[j].x) this.tiles.splice(j, 0, this.tiles.splice(j + 1, 1)[0]);
-						console.log(j);this.consoleArr(this.tiles, 'i');console.log(this.tiles[j + 1]);break;
-					};
-*/
-/*
-				};
-				if (l == 0) break; // здесь прерываем - нет плитки, которую можно вставить в какую-либо дырку
-*/
+				this.sitAll();
+
+				m = this.consoleArr(this.tiles, 'i');
+				n = variants.findIndex(function(el) {return el.order == m;});
+				if (n >= 0) break;
+				variants.push({
+					order: m,
+					holes: this.holes.length,
+					height: this.maxSpacesV(0, this.columns)
+				});
 			}
+
+			variants.splice(0, n);
+			variants.sort(function(a, b) {
+				if ((a.holes != b.holes)) {
+					return a.holes - b.holes;
+				} else {
+					return a.height - b.height;
+				};
+			});
+			console.log(n, variants);
 
 			if (this.debug) console.log({ // only for debug purpose
 				iteration: iteration,
@@ -241,22 +266,6 @@
 				width: (step.x * this.columns - this.gap) + 'px',
 				height: (step.y * this.maxSpacesV(0, this.columns) - this.gap) + 'px'
 			});
-/*
-			function subSort(arr, start, end, x){
-				var sub = arr.slice(start, end + 1).sort(function(a, b) {
-						if ((a.x == x && b.x == x) || (a.x != x && b.x != x)) {
-							return a.i - b.i;
-						} else if (a.x == x) {
-							return -1;
-						} else {
-							return 1;
-						};
-					}),
-					i = sub.length;
-				while (i--) {
-					arr[start + i] = sub[i];
-				}
-			}*/
 		}
 
 		sitAll() {
@@ -274,21 +283,6 @@
 			for (var i = 0; i < this.tiles.length; i++) {
 				this.poses.push(this.sit(this.tiles[i]));
 			}
-/*
-			this.poses.sort(function(a, b) {
-				if (a.y != b.y) {
-					return a.y - b.y;
-				} else {
-					return a.x - b.x;
-				};
-			});
-			var copy = this.tiles.slice(0);
-			for (var i = 0; i < this.tiles.length; i++) {
-				this.tiles[i] = copy[this.poses[i].i];
-			}
-*/
-		this.consoleArr(this.tiles, 'i');
-
 		}
 
 		sit(tile) {
@@ -321,7 +315,7 @@
 					};
 				};
 
-				this.holes.sort(compareH);
+				this.holes.sort(this.compareH);
 				return findTile;
 			}
 
@@ -336,7 +330,7 @@
 				};
 			}
 
-			spacesM.sort(compareH);
+			spacesM.sort(this.compareH);
 			var holesM = [];
 			for (var i = 0; i < this.holes.length; i++) {
 				var base = this.holes[i];
@@ -349,7 +343,7 @@
 
 			var l = holesM.length;
 			if (l > 0 && sitTile.y > 1) {
-				holesM.sort(compareV);
+				holesM.sort(this.compareV);
 				for (var i = 0; i < l - sitTile.y + 1; i++) {
 					var base = holesM[i];
 					for (var j = 1; j < sitTile.y; j++) {
@@ -358,10 +352,10 @@
 					if (j == sitTile.y) holesM.push(base);
 				}
 				holesM.splice(0, l);
-				holesM.sort(compareH);
+				holesM.sort(this.compareH);
 			}
 
-			if (holesM.length > 0 && compareH(holesM[0], spacesM[0]) < 0) {
+			if (holesM.length > 0 && this.compareH(holesM[0], spacesM[0]) < 0) {
 				findTile = {
 					x: holesM[0].x,
 					y: holesM[0].y,
@@ -400,7 +394,7 @@
 					}
 					this.holes.splice(i, j);
 				}
-				this.holes.sort(compareH);
+				this.holes.sort(this.compareH);
 				return findTile;
 			}
 
@@ -426,32 +420,32 @@
 					i: tile.i
 				};
 			};
-			this.holes.sort(compareH);
+			this.holes.sort(this.compareH);
 			spacesM.length = 0;
 			return findTile;
+		}
 
-			function compareH(a, b){
-				if (a.y != b.y) {
-					return a.y - b.y;
-				} else {
-					return a.x - b.x;
-				};
-			}
+		compareH(a, b) {
+			if (a.y != b.y) {
+				return a.y - b.y;
+			} else {
+				return a.x - b.x;
+			};
+		}
 
-			function compareV(a, b){
-				if (a.x != b.x) {
-					return a.x - b.x;
-				} else {
-					return a.y - b.y;
-				};
-			}
+		compareV(a, b) {
+			if (a.x != b.x) {
+				return a.x - b.x;
+			} else {
+				return a.y - b.y;
+			};
 		}
 /*
 		onSit(el, ui) {
 			console.log(this);console.log(el);console.log(ui);
 		}
 */
-		step(){
+		step() {
 			var w = Math.min(Math.round(((this.width + this.gap) / this.columns) - this.gap), this.tileSize.x);
 			return {
 				x: w + this.gap,
@@ -487,14 +481,14 @@
 			return size;
 		}
 
-		boundSize(tile){
+		boundSize(tile) {
 			return {
 				x: Math.min(tile.x, this.tileLimit.x),
 				y: Math.min(tile.y, this.tileLimit.y)
 			};
 		}
 
-		boundSizeR(tile){
+		boundSizeR(tile) {
 			if (tile.x > this.columns) return {
 				x: this.columns,
 				y: 1,
@@ -512,7 +506,7 @@
 			};
 		}
 
-		maxSpaces(start, end){
+		maxSpaces(start, end) {
 			var m = this.spaces[start].y;
 			for (var i = start + 1; i < end; i++) {
 				m = Math.max(m, this.spaces[i].y);
@@ -520,7 +514,7 @@
 			return m;
 		}
 
-		maxSpacesV(start, end){
+		maxSpacesV(start, end) {
 			var m = this.spaces[start].v;
 			for (var i = start + 1; i < end; i++) {
 				m = Math.max(m, this.spaces[i].v);
@@ -528,12 +522,12 @@
 			return m;
 		}
 
-		consoleArr(arr, el){ // only for debug purpose
+		consoleArr(arr, el) { // only for debug purpose
 			for (var i = 0, s = ''; i < arr.length; i++) {
 				if (i > 0) s += '/';
 				s += arr[i][el];
 			};
-			console.log(s);
+			return s;
 		}
 
 	}
