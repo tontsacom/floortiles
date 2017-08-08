@@ -103,6 +103,7 @@
 				pos,
 				posR,
 				sizeR,
+				copy = [],
 				time;
 
 			this.tiles.length = 0;
@@ -118,39 +119,78 @@
 			if (this.debug) time = performance.now(); // only for debug purpose
 
 			this.sitAll();
-			this.consoleArr(this.tiles, 'i'); // only for debug purpose
 
+			// цикл итераций (при условии существования дырок) с контролем количества итераций
 			for (var iteration = 0, i = 0; this.holes.length > 0 && iteration < 100; iteration++) {
-				for (var j = 1; j < this.tiles.length; j++) {
-					if (this.tiles[j].i == this.holes[i].i) break;
+				// найти индекс плитки, создавшей первую (i-ую) дырку
+				var j = this.tiles.findIndex(function(el) {return el.i == this.holes[i].i;}, this);
+/*
+				for (; i < this.holes.length; i++) {
+*/
+				// найти размер дырки (по горизонтали)
+				for (var k = 1; i + k < this.holes.length; k++) {
+					if (this.holes[i + k].x != this.holes[i].x + k || this.holes[i + k].y != this.holes[i].y) break;
+				};
+				// увеличить размер дырки (по горизонтали), если дырка "выглядывает"
+				for (; this.holes[i].x + k < this.spaces.length; k++) {
+					if (this.spaces[this.holes[i].x + k].y > this.holes[i].y) break;
 				};
 
-				for (; i < this.holes.length; i++) {
-					for (var k = 1; i + k < this.holes.length; k++) {
-						// возможно здесь надо добавить условие на проверку не только обычных дырок, но и "выглядывающих" дырок
-						if (this.holes[i + k].x != this.holes[i].x + k || this.holes[i + k].y != this.holes[i].y) break;
+				// найти в плитках, лежащих после плитки, создавшей первую (i-ую) дырку, первой плитки, которая
+				// максимально (по размерам по горизонтали) подходит для дырки
+				for (var l = j + 1, m = 0, n = 0; l < this.tiles.length; l++) {
+					if (this.tiles[l].x == k) break;
+					if (this.tiles[l].x < k && m < this.tiles[l].x) {
+						m = this.tiles[l].x;
+						n = l;
 					};
-					for (var l = j + 1, m = 0, n = 0; l < this.tiles.length; l++) {
-						if (this.tiles[l].x == k) break;
-						if (this.tiles[l].x < k && m < this.tiles[l].x) {
-							m = this.tiles[l].x;
-							n = l;
+				};
+				if (l >= this.tiles.length) l = n;
+
+				if (l > 0) {
+
+					// нашли плитку, которую можно вставить в дырку
+					k = this.tiles[l].x;
+					// выборка подмассива плиток и его особая сортировка
+					copy = this.tiles.slice(j, l + 1).sort(function(a, b) {
+						if ((a.x == k && b.x == k) || (a.x != k && b.x != k)) {
+							return a.i - b.i;
+						} else if (a.x == k) {
+							return -1;
+						} else {
+							return 1;
 						};
+					});
+					k = copy.length;
+					while (k--) {
+						this.tiles[j + k] = copy[k];
 					};
-					if (l == this.tiles.length) l = n;
-					if (l > 0) break; // здесь прерываем - нашли плитку, которую можно вставить в дырку[i]
+					copy.length = 0;
+					this.sitAll();
+
+				} else {
+
+					// нет плитки, которую можно вставить в дырку
+					console.log(j, k, l, m, n);
+					if (++i >= this.holes.length) break;
+
+				}
 /*
-					console.log(j, l, i, this.holes[i], this.poses);
-					l = 0;
-					break;
+				if (l > 0) break; // здесь прерываем - нашли плитку, которую можно вставить в дырку[i]
+					k = this.holes[i].y;
+					m = j;
+					while (m--) {
+						console.log(m, this.poses[m]);
+					};
+					while (j--) {console.log(this.tiles[j]);
+						if (this.tiles[j + 1].x != this.tiles[j].x || this.tiles[j + 1].y > this.tiles[j].x) this.tiles.splice(j, 0, this.tiles.splice(j + 1, 1)[0]);
+						console.log(j);this.consoleArr(this.tiles, 'i');console.log(this.tiles[j + 1]);break;
+					};
 */
+/*
 				};
 				if (l == 0) break; // здесь прерываем - нет плитки, которую можно вставить в какую-либо дырку
-
-				subSort(this.tiles, j, l, this.tiles[l].x);
-				this.sitAll();
-
-				this.consoleArr(this.tiles, 'i'); // only for debug purpose
+*/
 			}
 
 			if (this.debug) console.log({ // only for debug purpose
@@ -201,24 +241,22 @@
 				width: (step.x * this.columns - this.gap) + 'px',
 				height: (step.y * this.maxSpacesV(0, this.columns) - this.gap) + 'px'
 			});
-
+/*
 			function subSort(arr, start, end, x){
-				var sub = arr.slice(start, end + 1).sort(compare),
+				var sub = arr.slice(start, end + 1).sort(function(a, b) {
+						if ((a.x == x && b.x == x) || (a.x != x && b.x != x)) {
+							return a.i - b.i;
+						} else if (a.x == x) {
+							return -1;
+						} else {
+							return 1;
+						};
+					}),
 					i = sub.length;
 				while (i--) {
 					arr[start + i] = sub[i];
 				}
-
-				function compare(a, b){
-					if ((a.x == x && b.x == x) || (a.x != x && b.x != x)) {
-						return a.i - b.i;
-					} else if (a.x == x) {
-						return -1;
-					} else {
-						return 1;
-					};
-				}
-			}
+			}*/
 		}
 
 		sitAll() {
@@ -236,6 +274,21 @@
 			for (var i = 0; i < this.tiles.length; i++) {
 				this.poses.push(this.sit(this.tiles[i]));
 			}
+/*
+			this.poses.sort(function(a, b) {
+				if (a.y != b.y) {
+					return a.y - b.y;
+				} else {
+					return a.x - b.x;
+				};
+			});
+			var copy = this.tiles.slice(0);
+			for (var i = 0; i < this.tiles.length; i++) {
+				this.tiles[i] = copy[this.poses[i].i];
+			}
+*/
+		this.consoleArr(this.tiles, 'i');
+
 		}
 
 		sit(tile) {
@@ -309,7 +362,12 @@
 			}
 
 			if (holesM.length > 0 && compareH(holesM[0], spacesM[0]) < 0) {
-				findTile = holesM[0];
+				findTile = {
+					x: holesM[0].x,
+					y: holesM[0].y,
+					v: holesM[0].v,
+					i: tile.i
+				};
 				for (var i = 0; i < this.holes.length; i++) {
 					if (this.holes[i].x == findTile.x && this.holes[i].y == findTile.y) break;
 				}
@@ -346,7 +404,12 @@
 				return findTile;
 			}
 
-			findTile = spacesM[0];
+			findTile = {
+					x: spacesM[0].x,
+					y: spacesM[0].y,
+					v: spacesM[0].v,
+					i: tile.i
+				};
 			for (var i = findTile.x; i < findTile.x + sitTile.x; i++) {
 				for (var j = this.spaces[i].y; j < findTile.y; j++) {
 					this.holes.push({
