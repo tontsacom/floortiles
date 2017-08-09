@@ -228,14 +228,17 @@
 				tileR,
 				pos,
 				posR,
-				sizeR,
-				copy = this.tiles.slice(0).sort(function(a, b) {return a.i - b.i;}),
-				index = this.variants[variant >= this.variants.length ? 0 : variant].order.split('/');
+				sizeR;
 
-			for (var i = 0; i < this.tiles.length; i++) {
-				this.tiles[i] = copy[index[i]];
+			if (this.variants.length > 0) {
+				var copy = this.tiles.slice(0).sort(function(a, b) {return a.i - b.i;}),
+					index = this.variants[this.variant >= this.variants.length ? 0 : this.variant].order.split('/');
+
+				for (var i = 0; i < this.tiles.length; i++) {
+					this.tiles[i] = copy[index[i]];
+				}
+				this.sitAll();
 			}
-			this.sitAll();
 
 			for (var i = 0; i < this.tiles.length; i++) {
 				pos = this.poses[i];
