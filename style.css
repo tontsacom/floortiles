@@ -11,12 +11,16 @@ body {
 }
 .floortiles-option {
 	margin-right: 40px;
+	width: 70%;
 }
-.container label {
-	width: 140px;
+.ui-slider {
+	background: #b9b9b9;
 }
-.slider {
-	margin-top: 22px;
+.ui-slider-range {
+	background: #575757;
+}
+.ui-slider-handle {
+	background: #131313;
 }
 .slider-tick-label-container {
 	font-size: 12px;

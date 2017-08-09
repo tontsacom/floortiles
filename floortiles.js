@@ -95,14 +95,7 @@
 			}
 			this.columns = Math.max(Math.min(Math.ceil((this.width + this.gap) / this.tileSize.x), this.maxCol), this.minCol);
 
-			var wrapper = this.$element.find('.floortiles-wrapper'),
-				childs = wrapper.children(),
-				step = this.step(),
-				tile,
-				tileR,
-				pos,
-				posR,
-				sizeR,
+			var childs = this.$element.find('.floortiles-wrapper').children(),
 				copy = [],
 				variants = [],
 				time;
@@ -125,9 +118,7 @@
 			for (var iteration = 0, i = 0; this.holes.length > 0 && iteration < 100; iteration++) {
 				// найти индекс плитки, создавшей первую (i-ую) дырку
 				var j = this.tiles.findIndex(function(el) {return el.i == this.holes[i].i;}, this);
-/*
-				for (; i < this.holes.length; i++) {
-*/
+
 				// найти размер дырки (по горизонтали)
 				for (var k = 1; i + k < this.holes.length; k++) {
 					if (this.holes[i + k].x != this.holes[i].x + k || this.holes[i + k].y != this.holes[i].y) break;
@@ -198,13 +189,14 @@
 				}
 				this.sitAll();
 
-				m = this.consoleArr(this.tiles, 'i');
+				m = this.order();
 				n = variants.findIndex(function(el) {return el.order == m;});
 				if (n >= 0) break;
 				variants.push({
 					order: m,
 					holes: this.holes.length,
-					height: this.maxSpacesV(0, this.columns)
+					height: this.maxSpacesV(0, this.columns),
+					chaos: this.chaos()
 				});
 			}
 
@@ -212,16 +204,38 @@
 			variants.sort(function(a, b) {
 				if ((a.holes != b.holes)) {
 					return a.holes - b.holes;
-				} else {
+				} else if ((a.height != b.height)) {
 					return a.height - b.height;
+				} else {
+					return a.chaos - b.chaos;
 				};
 			});
-			console.log(n, variants);
 
 			if (this.debug) console.log({ // only for debug purpose
 				iteration: iteration,
 				time: performance.now() - time
 			}, this);
+			this.variants = variants.filter(function(el) {return el.holes <= 2;});
+			this.variant = 0;
+			this.result(0);
+		}
+
+		result(variant) {
+			var wrapper = this.$element.find('.floortiles-wrapper'),
+				childs = wrapper.children(),
+				step = this.step(),
+				tile,
+				tileR,
+				pos,
+				posR,
+				sizeR,
+				copy = this.tiles.slice(0).sort(function(a, b) {return a.i - b.i;}),
+				index = this.variants[variant >= this.variants.length ? 0 : variant].order.split('/');
+
+			for (var i = 0; i < this.tiles.length; i++) {
+				this.tiles[i] = copy[index[i]];
+			}
+			this.sitAll();
 
 			for (var i = 0; i < this.tiles.length; i++) {
 				pos = this.poses[i];
@@ -522,12 +536,19 @@
 			return m;
 		}
 
-		consoleArr(arr, el) { // only for debug purpose
-			for (var i = 0, s = ''; i < arr.length; i++) {
+		order() {
+			for (var i = 0, s = ''; i < this.tiles.length; i++) {
 				if (i > 0) s += '/';
-				s += arr[i][el];
+				s += this.tiles[i].i;
 			};
 			return s;
+		}
+
+		chaos() {
+			for (var i = 0, c = 0; i < this.tiles.length; i++) {
+				c += Math.abs(i - this.tiles[i].i);
+			};
+			return c;
 		}
 
 	}

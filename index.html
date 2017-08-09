@@ -6,8 +6,8 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>FloorTiles Demo</title>
 
+		<link rel="stylesheet" href="jquery-ui.min.css">
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.8.1/css/bootstrap-slider.min.css">
 		<link rel="stylesheet" href="style.css">
 		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
 		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -28,37 +28,19 @@
 				<div class="col-xs-8">
 					<div class="floortiles-option pull-right">
 
-						<div class="floortiles-width">
-							<label>Width of Window:</label>
-							<input type="text"
-								data-provide="slider"
-								data-slider-ticks="[50, 100]"
-								data-slider-ticks-labels='["50%", "100%"]'
-								data-slider-min="50"
-								data-slider-max="100"
-								data-slider-step="1"
-								data-slider-value="100"
-								data-slider-tooltip="hide" />
-						</div>
+						<span>Width of Window:</span>
+						<div class="floortiles-width"></div>
 
-						<div class="floortiles-ratio">
-							<label>Ratio of 1x1 Tile:</label>
-							<input type="text"
-								data-provide="slider"
-								data-slider-ticks="[30, 80]"
-								data-slider-ticks-labels='["1x2", "4x3"]'
-								data-slider-min="30"
-								data-slider-max="80"
-								data-slider-step="1"
-								data-slider-value="80"
-								data-slider-tooltip="hide" />
-						</div>
+						<span>Ratio of 1x1 Tile:</span>
+						<div class="floortiles-ratio"></div>
+
+						<button type="button" class="btn btn-default">Next</button>
 
 					</div>
 				</div>
 
 				<div class="col-xs-3">
-					<div id="floorscope" class="floortiles-scope"></div>
+					<div class="floortiles-scope"></div>
 				</div>
 
 				<div class="col-xs-9">
@@ -120,9 +102,9 @@
 		</div>
 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+		<script src="jquery-ui.min.js"></script>
+		<script src="jquery.ui.touch-punch.min.js"></script>
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.8.1/bootstrap-slider.min.js"></script>
-		<script src="Sortable.min.js"></script>
 		<script src="floortiles.js" type="text/javascript"></script>
 		<script type="text/javascript">
 
@@ -130,7 +112,7 @@
 			jQuery(document).ready(function($) {
 
 				$('.floor .floortiles [data-tile]').each(function() {
-					$('.floortiles-scope').append('<div></div>');
+					$('.floortiles-scope').append('<div class="ui-state-default" />');
 				});
 
 				$('.floor .floortiles').floortiles({
@@ -153,33 +135,56 @@
 					}
 				});
 
-				$('.floortiles-width input').slider().on('slideStop', function(event){
-					$('.floor').css({
-						width: event.value + '%'
-					});
-					$('.floortiles').floortiles();
+				$('.floortiles-width').slider({
+					range: "min",
+					value: 100,
+					min: 50,
+					max: 100,
+					step: 1,
+					stop: function(event, ui) {
+						$('.floor').css({
+							width: ui.value + '%'
+						});
+						$('.floortiles').floortiles();
+					}
 				});
 
-				$('.floortiles-ratio input').slider().on('slideStop', function(event){
-					var w = Math.round(Math.sqrt(500 * event.value));
-					$('.floortiles').floortiles({
-						tileSize: w + 'x' + Math.round(30000 / w)
-					});
+				$('.floortiles-ratio').slider({
+					range: "min",
+					value: 80,
+					min: 30,
+					max: 80,
+					step: 1,
+					stop: function(event, ui) {
+						var w = Math.round(Math.sqrt(500 * ui.value));
+						$('.floortiles').floortiles({
+							tileSize: w + 'x' + Math.round(30000 / w)
+						});
+					}
 				});
 
-				Sortable.create(floorscope, {
-					group: "sorting",
-					sort: true,
-					onEnd: function (event) {
-						if (event.oldIndex == event.newIndex) return;
-						if (event.oldIndex > event.newIndex) {
-							$('.floor .floortiles [data-tile]').eq(event.oldIndex).detach().insertBefore($('.floortiles [data-tile]').eq(event.newIndex));
+				$('.btn').on('click', function(event){
+					var floortiles = $('.floortiles').data('floortiles');
+					if (++floortiles.variant >= floortiles.variants.length) floortiles.variant = 0;
+					floortiles.result(floortiles.variant);
+				});
+
+				var start;
+				$('.floortiles-scope').sortable({
+					start: function(event, ui) {
+						start = ui.item.index();
+					},
+					stop: function(event, ui) {
+						if (ui.item.index() == start) return;
+						if (ui.item.index() < start) {
+							$('.floor .floortiles [data-tile]').eq(start).detach().insertBefore($('.floortiles [data-tile]').eq(ui.item.index()));
 						} else {
-							$('.floor .floortiles [data-tile]').eq(event.oldIndex).detach().insertAfter($('.floortiles [data-tile]').eq(event.newIndex - 1));
+							$('.floor .floortiles [data-tile]').eq(start).detach().insertAfter($('.floortiles [data-tile]').eq(ui.item.index() - 1));
 						}
 						$(window).trigger('resize.floortiles');
 					}
 				});
+				$('.floortiles-scope').disableSelection();
 
 			})
 
