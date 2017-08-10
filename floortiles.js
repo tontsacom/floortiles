@@ -53,9 +53,9 @@
 
 			$.extend(this, optionsDefault);
 
-/*			this.nextStatus = false;*/
+			this.nextStatus = false;
 			this.reset(options);
-/*			this.nextStatus = true;*/
+			this.nextStatus = true;
 		}
 
 		destructor() {
@@ -231,7 +231,8 @@
 
 			if (this.debug) console.log({ // only for debug purpose
 				iteration: iteration,
-				time: performance.now() - time
+				time: performance.now() - time,
+				floortiles: this
 			});
 			if (variants.length > 0) {
 				state.order = variants[0].order;
@@ -263,15 +264,15 @@
 					y: step.y * tileR.v - this.gap
 				};
 
-				this.tiled(childs.eq(state.tiles[i].i), {
-					index: state.tiles[i].i, 
+				this.tiled(childs.eq(i), {
+					index: i, 
 					tile: tile, 
 					pos: posR,
 					size: sizeR,
 					tileSize: this.tileSize
 				});
-				if (this.animate/* && this.nextStatus*/) {
-					childs.eq(state.tiles[i].i).animate(
+				if (this.animate && this.nextStatus) {
+					childs.eq(i).animate(
 						{
 							width: sizeR.x + 'px',
 							height: sizeR.y +'px',
@@ -281,7 +282,7 @@
 						this.animateTime
 					);
 				} else {
-					childs.eq(state.tiles[i].i).css({
+					childs.eq(i).css({
 						width: sizeR.x + 'px',
 						height: sizeR.y +'px',
 						left: posR.x + 'px',
@@ -306,6 +307,7 @@
 			}
 			for (var i = 0; i < state.order.length; i++) {
 				state.poses[state.order[i]] = this.sit(state.tiles[state.order[i]], state);
+				console.log(state.poses[state.order[i]].i, state.order[i]);
 			}
 		}
 
