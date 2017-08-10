@@ -23,7 +23,14 @@
 		delayResizeTime: 500,
 		debug: false, // only for debug purpose
 		tiled: function(el, ui) {
-// el - element, ui - {index: (from 0), tile: {x, y}, pos: {x, y}, size: {x, y}, tileSize: {x, y}}
+// el - element,
+// ui - object {
+	// index: (from 0),
+	// tile: {x, y},
+	// pos: {x, y},
+	// size: {x, y},
+	// tileSize: {x, y}
+// }
 		}
 	}
 
@@ -44,15 +51,11 @@
 			});
 			this.$element.wrapInner('<div class="floortiles-wrapper" style="position: relative;max-width: 100%;margin: 0 auto;" />');
 
-			this.tiles = [];
-			this.spaces = [];
-			this.holes = [];
-			this.poses = [];
 			$.extend(this, optionsDefault);
 
-			this.nextStatus = false;
-			this.reset(options)
-			this.nextStatus = true;
+/*			this.nextStatus = false;*/
+			this.reset(options);
+/*			this.nextStatus = true;*/
 		}
 
 		destructor() {
@@ -92,62 +95,77 @@
 				this.width = this.$element.width();
 			} else {
 				$.error('Wrong value of property maxWidth in jQuery.floortiles');
-			}
+			};
 			this.columns = Math.max(Math.min(Math.ceil((this.width + this.gap) / this.tileSize.x), this.maxCol), this.minCol);
 
+
 			var childs = this.$element.find('.floortiles-wrapper').children(),
+				state = {
+					tiles: [],
+					order: [],
+					spaces: [],
+					holes: [],
+					poses: []
+				},
 				copy = [],
 				variants = [],
 				time;
 
-			this.tiles.length = 0;
 			for (var i = 0; i < childs.length; i++) {
 				var size = this.minSizeTile(childs.eq(i).data('tile'));
-				this.tiles.push({
-					i: i,
+				state.tiles.push({
+					i: i,	// надо удалить позднее
 					x: size.x,
 					y: size.y
 				});
-			}
+				state.order.push(i);
+				state.poses.push({
+					i: i,	// надо удалить позднее
+					x: 0,
+					y: 0,
+					v: 0
+				});
+			};
 
 			if (this.debug) time = performance.now(); // only for debug purpose
 
-			this.sitAll();
+			this.sitAll(state);
 
 			// цикл итераций (при условии существования дырок) с контролем количества итераций
-			for (var iteration = 0, i = 0; this.holes.length > 0 && iteration < 100; iteration++) {
+			for (var iteration = 0, i = 0; state.holes.length > 0 && iteration < 100; iteration++) {
 				// найти индекс плитки, создавшей первую (i-ую) дырку
-				var j = this.tiles.findIndex(function(el) {return el.i == this.holes[i].i;}, this);
+				var j = state.order.findIndex(function(el) {return el == state.holes[i].i;});
 
 				// найти размер дырки (по горизонтали)
-				for (var k = 1; i + k < this.holes.length; k++) {
-					if (this.holes[i + k].x != this.holes[i].x + k || this.holes[i + k].y != this.holes[i].y) break;
+				for (var k = 1; i + k < state.holes.length; k++) {
+					if (state.holes[i + k].x != state.holes[i].x + k || state.holes[i + k].y != state.holes[i].y) break;
 				};
 				// увеличить размер дырки (по горизонтали), если дырка "выглядывает"
-				for (; this.holes[i].x + k < this.spaces.length; k++) {
-					if (this.spaces[this.holes[i].x + k].y > this.holes[i].y) break;
+				for (; state.holes[i].x + k < this.columns; k++) {
+					if (state.spaces[state.holes[i].x + k].y > state.holes[i].y) break;
 				};
 
 				// найти в плитках, лежащих после плитки, создавшей первую (i-ую) дырку, первой плитки, которая
 				// максимально (по размерам по горизонтали) подходит для дырки
-				for (var l = j + 1, m = 0, n = 0; l < this.tiles.length; l++) {
-					if (this.tiles[l].x == k) break;
-					if (this.tiles[l].x < k && m < this.tiles[l].x) {
-						m = this.tiles[l].x;
+				for (var l = j + 1, m = 0, n = 0; l < state.order.length; l++) {
+					if (state.tiles[state.order[l]].x == k) break;
+					if (state.tiles[state.order[l]].x < k && m < state.tiles[state.order[l]].x) {
+						m = state.tiles[state.order[l]].x;
 						n = l;
 					};
 				};
-				if (l >= this.tiles.length) l = n;
+				if (l >= state.order.length) l = n;
 
 				if (l > 0) {
 
 					// нашли плитку, которую можно вставить в дырку
-					k = this.tiles[l].x;
+					k = state.tiles[state.order[l]].x;
 					// выборка подмассива плиток и его особая сортировка
-					copy = this.tiles.slice(j, l + 1).sort(function(a, b) {
-						if ((a.x == k && b.x == k) || (a.x != k && b.x != k)) {
-							return a.i - b.i;
-						} else if (a.x == k) {
+					copy = state.order.slice(j, l + 1).sort(function(a, b) {
+						if ((state.tiles[a].x == k && state.tiles[b].x == k) ||
+								(state.tiles[a].x != k && state.tiles[b].x != k)) {
+							return a - b;
+						} else if (state.tiles[a].x == k) {
 							return -1;
 						} else {
 							return 1;
@@ -155,19 +173,19 @@
 					});
 					k = copy.length;
 					while (k--) {
-						this.tiles[j + k] = copy[k];
+						state.order[j + k] = copy[k];
 					};
 					copy.length = 0;
 
 				} else {
 
 					// нет плитки, которую можно вставить в дырку
-					l = this.holes[i].y;
+					l = state.holes[i].y;
 					for (var m = 0; m < j; m++) {
 						copy.push({
-							i: this.tiles[m].i,
-							y: this.poses[m].y,
-							y2: this.poses[m].y + this.tiles[m].y
+							i: state.tiles[state.order[m]].i,
+							y: state.poses[state.order[m]].y,
+							y2: state.poses[state.order[m]].y + state.tiles[state.order[m]].y
 						});
 					}
 
@@ -182,24 +200,24 @@
 
 					// перестановка плиток снизу-вверх с "отскоком"
 					while (j--) {
-						if (this.tiles[j + 1].x != this.tiles[j].x) this.tiles.splice(j, 0, this.tiles.splice(j + 1, 1)[0]);
-						if (this.tiles[j + 1].i == m) break;
+						if (state.tiles[state.order[j + 1]].x != state.tiles[state.order[j]].x) state.order.splice(j, 0, state.order.splice(j + 1, 1)[0]);
+						if (state.tiles[state.order[j + 1]].i == m) break;
 					};
 
-				}
-				this.sitAll();
+				};
+				this.resitAll(state);
 
-				m = this.order();
-				n = variants.findIndex(function(el) {return el.order == m;});
+				m = state.order.slice(0);
+				n = variants.findIndex(function(el) {return el.order.join() == m.join();});
 				if (n >= 0) break;
 				variants.push({
 					order: m,
-					holes: this.holes.length,
-					height: this.maxSpacesV(0, this.columns),
-					chaos: this.chaos()
+					holes: state.holes.length,
+					height: this.maxSpacesV(0, this.columns, state),
+					chaos: this.chaos(state)
 				});
-			}
 
+			}
 			variants.splice(0, n);
 			variants.sort(function(a, b) {
 				if ((a.holes != b.holes)) {
@@ -214,13 +232,15 @@
 			if (this.debug) console.log({ // only for debug purpose
 				iteration: iteration,
 				time: performance.now() - time
-			}, this);
-			this.variants = variants.filter(function(el) {return el.holes <= 2;});
-			this.variant = 0;
-			this.result(0);
+			});
+			if (variants.length > 0) {
+				state.order = variants[0].order;
+				this.resitAll(state);
+			};
+			this.result(state);
 		}
 
-		result(variant) {
+		result(state) {
 			var wrapper = this.$element.find('.floortiles-wrapper'),
 				childs = wrapper.children(),
 				step = this.step(),
@@ -230,19 +250,9 @@
 				posR,
 				sizeR;
 
-			if (this.variants.length > 0) {
-				var copy = this.tiles.slice(0).sort(function(a, b) {return a.i - b.i;}),
-					index = this.variants[this.variant >= this.variants.length ? 0 : this.variant].order.split('/');
-
-				for (var i = 0; i < this.tiles.length; i++) {
-					this.tiles[i] = copy[index[i]];
-				}
-				this.sitAll();
-			}
-
-			for (var i = 0; i < this.tiles.length; i++) {
-				pos = this.poses[i];
-				tile = this.boundSize(this.tiles[i]);
+			for (var i = 0; i < state.tiles.length; i++) {
+				pos = state.poses[i];
+				tile = this.boundSize(state.tiles[i]);
 				tileR = this.boundSizeR(tile);
 				posR = {
 					x: step.x * pos.x,
@@ -253,15 +263,15 @@
 					y: step.y * tileR.v - this.gap
 				};
 
-				this.tiled(childs.eq(this.tiles[i].i), {
-					index: this.tiles[i].i, 
+				this.tiled(childs.eq(state.tiles[i].i), {
+					index: state.tiles[i].i, 
 					tile: tile, 
 					pos: posR,
 					size: sizeR,
 					tileSize: this.tileSize
 				});
-				if (this.animate && this.nextStatus) {
-					childs.eq(this.tiles[i].i).animate(
+				if (this.animate/* && this.nextStatus*/) {
+					childs.eq(state.tiles[i].i).animate(
 						{
 							width: sizeR.x + 'px',
 							height: sizeR.y +'px',
@@ -271,7 +281,7 @@
 						this.animateTime
 					);
 				} else {
-					childs.eq(this.tiles[i].i).css({
+					childs.eq(state.tiles[i].i).css({
 						width: sizeR.x + 'px',
 						height: sizeR.y +'px',
 						left: posR.x + 'px',
@@ -281,28 +291,31 @@
 			}
 			wrapper.css({
 				width: (step.x * this.columns - this.gap) + 'px',
-				height: (step.y * this.maxSpacesV(0, this.columns) - this.gap) + 'px'
+				height: (step.y * this.maxSpacesV(0, this.columns, state) - this.gap) + 'px'
 			});
 		}
 
-		sitAll() {
-			this.holes.length = 0;
-			this.spaces.length = 0;
+		sitAll(state) {
 			for (var i = 0; i < this.columns; i++) {
-				this.spaces[i] = {
-					x: i,
+				state.spaces[i] = {
+					x: i,	// надо удалить позднее
 					y: 0,
 					v: 0,
-					i: 0
+					i: 0	// надо удалить позднее
 				};
 			}
-			this.poses.length = 0;
-			for (var i = 0; i < this.tiles.length; i++) {
-				this.poses.push(this.sit(this.tiles[i]));
+			for (var i = 0; i < state.order.length; i++) {
+				state.poses[state.order[i]] = this.sit(state.tiles[state.order[i]], state);
 			}
 		}
 
-		sit(tile) {
+		resitAll(state) {
+			state.spaces.length = 0;
+			state.holes.length = 0;
+			this.sitAll(state);
+		}
+
+		sit(tile, state) {
 			var sitTile = this.boundSize(tile),
 				findTile;
 
@@ -310,21 +323,21 @@
 				sitTile = this.boundSizeR(sitTile);
 				findTile = {
 					x: 0,
-					y: this.maxSpaces(0, this.spaces.length),
-					v: this.maxSpacesV(0, this.spaces.length),
+					y: this.maxSpaces(0, this.columns, state),
+					v: this.maxSpacesV(0, this.columns, state),
 					i: tile.i
 				};
 
-				for (var i = 0; i < this.spaces.length; i++) {
-					for (var j = this.spaces[i].y; j < findTile.y; j++) {
-						this.holes.push({
-							x: this.spaces[i].x,
+				for (var i = 0; i < this.columns; i++) {
+					for (var j = state.spaces[i].y; j < findTile.y; j++) {
+						state.holes.push({
+							x: state.spaces[i].x,
 							y: j,
-							v: j - this.spaces[i].y + this.spaces[i].v,
+							v: j - state.spaces[i].y + state.spaces[i].v,
 							i: tile.i
 						});
 					};
-					this.spaces[i] = {
+					state.spaces[i] = {
 						x: i,
 						y: findTile.y + sitTile.y,
 						v: findTile.v + sitTile.v,
@@ -332,28 +345,28 @@
 					};
 				};
 
-				this.holes.sort(this.compareH);
+				state.holes.sort(this.compareH);
 				return findTile;
 			}
 
 			sitTile = this.boundSizeR(sitTile);
 			var spacesM = [];
-			for (var i = 0; i < this.spaces.length - sitTile.x + 1; i++) {
+			for (var i = 0; i < this.columns - sitTile.x + 1; i++) {
 				spacesM[i] = {
 					x: i,
-					y: this.maxSpaces(i, i + sitTile.x),
-					v: this.maxSpacesV(i, i + sitTile.x),
+					y: this.maxSpaces(i, i + sitTile.x, state),
+					v: this.maxSpacesV(i, i + sitTile.x, state),
 					i: tile.i
 				};
 			}
 
 			spacesM.sort(this.compareH);
 			var holesM = [];
-			for (var i = 0; i < this.holes.length; i++) {
-				var base = this.holes[i];
+			for (var i = 0; i < state.holes.length; i++) {
+				var base = state.holes[i];
 				for (var j = 1; j < sitTile.x; j++) {
-					if ((i + j >= this.holes.length || this.holes[i + j].x != base.x + j || this.holes[i + j].y != base.y) &&
-						(this.holes[i].x + j >= this.spaces.length || this.spaces[this.holes[i].x + j].y > base.y)) break;
+					if ((i + j >= state.holes.length || state.holes[i + j].x != base.x + j || state.holes[i + j].y != base.y) &&
+						(state.holes[i].x + j >= this.columns || state.spaces[state.holes[i].x + j].y > base.y)) break;
 				}
 				if (j == sitTile.x) holesM.push(base);
 			}
@@ -379,39 +392,39 @@
 					v: holesM[0].v,
 					i: tile.i
 				};
-				for (var i = 0; i < this.holes.length; i++) {
-					if (this.holes[i].x == findTile.x && this.holes[i].y == findTile.y) break;
+				for (var i = 0; i < state.holes.length; i++) {
+					if (state.holes[i].x == findTile.x && state.holes[i].y == findTile.y) break;
 				}
-				for (var j = 1; j < sitTile.x && i + j < this.holes.length; j++) {
-					if (this.holes[i + j].x != findTile.x + j || this.holes[i + j].y != findTile.y) break;
+				for (var j = 1; j < sitTile.x && i + j < state.holes.length; j++) {
+					if (state.holes[i + j].x != findTile.x + j || state.holes[i + j].y != findTile.y) break;
 				}
-				this.holes.splice(i, j);
+				state.holes.splice(i, j);
 				for (; j < sitTile.x; j++) {
-					for (var k = this.spaces[findTile.x + j].y; k < findTile.y; k++) {
-						this.holes.push({
-							x: this.spaces[findTile.x + j].x,
+					for (var k = state.spaces[findTile.x + j].y; k < findTile.y; k++) {
+						state.holes.push({
+							x: state.spaces[findTile.x + j].x,
 							y: k,
 							v: k, // надо разобраться с этим, ранее было пропущено определение v
 							i: tile.i
 						});
 					}
-					this.spaces[findTile.x + j] = {
-						x: this.spaces[findTile.x + j].x,
+					state.spaces[findTile.x + j] = {
+						x: state.spaces[findTile.x + j].x,
 						y: findTile.y + sitTile.y,
 						v: findTile.v + sitTile.v,
 						i: tile.i
 					};
 				}
 				for (var k = 1; k < sitTile.y; k++) {
-					for (; i < this.holes.length; i++) {
-						if (this.holes[i].x == findTile.x && this.holes[i].y == findTile.y + k) break;
+					for (; i < state.holes.length; i++) {
+						if (state.holes[i].x == findTile.x && state.holes[i].y == findTile.y + k) break;
 					}
-					for (var j = 1; j < sitTile.x && i + j < this.holes.length; j++) {
-						if (this.holes[i + j].x != findTile.x + j || this.holes[i + j].y != findTile.y + k) break;
+					for (var j = 1; j < sitTile.x && i + j < state.holes.length; j++) {
+						if (state.holes[i + j].x != findTile.x + j || state.holes[i + j].y != findTile.y + k) break;
 					}
-					this.holes.splice(i, j);
+					state.holes.splice(i, j);
 				}
-				this.holes.sort(this.compareH);
+				state.holes.sort(this.compareH);
 				return findTile;
 			}
 
@@ -422,22 +435,22 @@
 					i: tile.i
 				};
 			for (var i = findTile.x; i < findTile.x + sitTile.x; i++) {
-				for (var j = this.spaces[i].y; j < findTile.y; j++) {
-					this.holes.push({
-						x: this.spaces[i].x,
+				for (var j = state.spaces[i].y; j < findTile.y; j++) {
+					state.holes.push({
+						x: state.spaces[i].x,
 						y: j,
-						v: j + this.spaces[i].v - this.spaces[i].y,
+						v: j + state.spaces[i].v - state.spaces[i].y,
 						i: tile.i
 					});
 				};
-				this.spaces[i] = {
+				state.spaces[i] = {
 					x: i,
 					y: findTile.y + sitTile.y,
 					v: findTile.v + sitTile.v,
 					i: tile.i
 				};
 			};
-			this.holes.sort(this.compareH);
+			state.holes.sort(this.compareH);
 			spacesM.length = 0;
 			return findTile;
 		}
@@ -523,33 +536,25 @@
 			};
 		}
 
-		maxSpaces(start, end) {
-			var m = this.spaces[start].y;
+		maxSpaces(start, end, state) {
+			var m = state.spaces[start].y;
 			for (var i = start + 1; i < end; i++) {
-				m = Math.max(m, this.spaces[i].y);
+				m = Math.max(m, state.spaces[i].y);
 			};
 			return m;
 		}
 
-		maxSpacesV(start, end) {
-			var m = this.spaces[start].v;
+		maxSpacesV(start, end, state) {
+			var m = state.spaces[start].v;
 			for (var i = start + 1; i < end; i++) {
-				m = Math.max(m, this.spaces[i].v);
+				m = Math.max(m, state.spaces[i].v);
 			};
 			return m;
 		}
 
-		order() {
-			for (var i = 0, s = ''; i < this.tiles.length; i++) {
-				if (i > 0) s += '/';
-				s += this.tiles[i].i;
-			};
-			return s;
-		}
-
-		chaos() {
-			for (var i = 0, c = 0; i < this.tiles.length; i++) {
-				c += Math.abs(i - this.tiles[i].i);
+		chaos(state) {
+			for (var i = 0, c = 0; i < state.order.length; i++) {
+				c += Math.abs(i - state.order[i]);
 			};
 			return c;
 		}
@@ -582,19 +587,15 @@
 
 		refresh: function() {
 			return this.each(function() {
-				var $this = $(this),
-					data = $this.data('floortiles');
-				data.refresh();
+				$(this).data('floortiles').refresh();
 			});
 		},
 
 		destroy: function() {
 			return this.each(function() {
-				var $this = $(this),
-					data = $this.data('floortiles');
 				$(window).off('.floortiles');
-				data.destructor();
-				$this.removeData('floortiles');
+				$(this).data('floortiles').destructor();
+				$(this).removeData('floortiles');
 			});
 		}
 	};
@@ -605,7 +606,7 @@
 		} else if (typeof method === 'object' || !method) {
 			return methods.init.apply(this, arguments);
 		} else {
-			$.error('Метод с именем ' + method + ' не существует для jQuery.floortiles' );
+			$.error('The method named ' + method + ' does not exist in jQuery.floortiles' );
 		}
 	};
 
