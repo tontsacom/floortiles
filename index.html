@@ -34,8 +34,6 @@
 						<span>Ratio of 1x1 Tile: (<span class="floortiles-ratio-value">1.3333333333</span>)</span>
 						<div class="floortiles-ratio"></div>
 
-						<button type="button" class="btn btn-default">Next</button>
-
 					</div>
 				</div>
 
@@ -168,12 +166,6 @@
 							tileSize: w + 'x' + Math.round(120 * 90 / w)
 						});
 					}
-				});
-
-				$('.btn').on('click', function(event){
-					var floortiles = $('.floortiles').data('floortiles');
-					if (++floortiles.variant >= floortiles.variants.length) floortiles.variant = 0;
-					floortiles.result(floortiles.variant);
 				});
 
 				var start;

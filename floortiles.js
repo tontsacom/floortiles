@@ -208,11 +208,11 @@
 				}
 				this.resitAll(state);
 
-				m = state.order.slice(0);
-				n = variants.findIndex(function(el) {return el.order.join() == m.join();});
-				if (n >= 0) break;
+				n = state.order.slice(0);
+				var o = variants.findIndex(function(el) {return el.order.join() == n.join();});
+				if (o >= 0) break;
 				variants.push({
-					order: m,
+					order: n,
 					holes: state.holes.length,
 					height: this.maxSpacesV(0, this.columns, state),
 					chaos: this.chaos(state)
@@ -229,16 +229,45 @@
 					return a.chaos - b.chaos;
 				}
 			});
-
-			if (this.debug) console.log({ // only for debug purpose
-				iteration: iteration,
-				time: performance.now() - time,
-				floortiles: this
-			});
 			if (variants.length > 0) {
 				state.order = variants[0].order;
 				this.resitAll(state);
 			}
+
+
+console.log(state);
+			if (state.holes.length > 0) {
+				j = state.order.findIndex(function(el) {return el == state.holes[i].i;});
+
+				l = state.holes[i].y;
+				for (var m = 0; m < j; m++) {
+					copy.push({
+						i: state.order[m],
+						y: state.poses[state.order[m]].y,
+						y2: state.poses[state.order[m]].y + state.tiles[state.order[m]].y
+					});
+				}
+
+				n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
+				while (n[0].y < l) {
+					l = n[0].y;
+					n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
+				}
+				m = n[0].i;
+				copy.length = 0;
+
+				j = state.order.findIndex(function(el) {return el == m;});
+
+				console.log(m, j, state.order.slice(j));
+			}
+
+
+			if (this.debug) console.log({ // only for debug purpose
+				iteration: iteration,
+				time: performance.now() - time,
+				variants: variants,
+				floortiles: this
+			});
 			this.result(state);
 		}
 
