@@ -123,11 +123,12 @@
 
 			if (this.debug) var t = performance.now(); // only for debug purpose
 
-			i = this.assembly(state, this.columns, 0);
+			i = this.assembly(state, this.columns, 0, {i: 0, y: 0, v: 0});
 
 			if (this.debug) console.log({ // only for debug purpose
 				iteration: i,
 				time: performance.now() - t,
+				state: state,
 				floortiles: this
 			});
 
@@ -189,11 +190,11 @@
 			});
 		}
 
-		assembly(state, columns, iteration) {
+		assembly(state, columns, iteration, start) {
 			var copy = [],
 				variants = [];
 
-			this.sitAll(state, columns);
+			this.sitAll(state, columns, start);
 
 			// loop of iterations (under condition of existence of holes)
 			// with control of the number of iterations
@@ -249,7 +250,7 @@
 
 					// there is no tile that can be inserted into the hole
 					l = state.holes[0].y;
-					for (var m = 0; m < j; m++) {
+					for (var m = start.i; m < j; m++) {
 						copy.push({
 							i: state.order[m],
 							y: state.poses[state.order[m]].y,
@@ -267,13 +268,13 @@
 					copy.length = 0;
 
 					// reshuffle of tiles from bottom to top with a "rebound"
-					while (j--) {
+					while (--j >= start.i) {
 						if (state.tiles[state.order[j + 1]].x != state.tiles[state.order[j]].x) state.order.splice(j, 0, state.order.splice(j + 1, 1)[0]);
 						if (state.order[j + 1] == m) break;
 					}
 
 				}
-				this.resitAll(state, columns);
+				this.sitAll(state, columns, start);
 
 				n = state.order.slice(0);
 				var o = variants.findIndex(function(el) {return el.order.join() == n.join();});
@@ -298,7 +299,7 @@
 			});
 			if (variants.length > 0) {
 				state.order = variants[0].order;
-				this.resitAll(state, columns);
+				this.sitAll(state, columns, start);
 			}
 
 			if (state.holes.length > 0) {
@@ -326,34 +327,30 @@
 
 				j = state.order.findIndex(function(el) {return el == m;});
 
-				console.log(m, j, state.order.slice(j));
+				return this.assembly(state, columns - 1, iteration, {i: j, y: state.poses[state.order[j]].y, v: state.poses[state.order[j]].v});
+
 			} else {
 				// здесь надо разместить обработку "хвостов"
 			}
-
+/*
 			if (this.debug) console.log({ // only for debug purpose
 				variants: variants
 			});
-
+*/
 			return iteration;
 		}
 
-		sitAll(state, columns) {
+		sitAll(state, columns, start) {
 			for (var i = 0; i < columns; i++) {
 				state.spaces[i] = {
-					y: 0,
-					v: 0
+					y: start.y,
+					v: start.y
 				};
 			}
-			for (var i = 0; i < state.order.length; i++) {
+			state.holes.length = 0;
+			for (var i = start.i; i < state.order.length; i++) {
 				state.poses[state.order[i]] = this.sit(state.tiles[state.order[i]], state, state.order[i]);
 			}
-		}
-
-		resitAll(state, columns) {
-			state.spaces.length = 0;
-			state.holes.length = 0;
-			this.sitAll(state, columns);
 		}
 
 		sit(tile, state, index) {
@@ -447,6 +444,7 @@
 				};
 
 				// define of the placement of a multiple hole
+// добавить возможную корректировку state.holes.i (если вставленная плитка образует дырки, отмеченные ранее)
 				for (var i = 0; i < state.holes.length; i++) {
 					if (state.holes[i].x == findTile.x && state.holes[i].y == findTile.y) break;
 				}
