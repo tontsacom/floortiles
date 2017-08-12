@@ -98,7 +98,6 @@
 			}
 			this.columns = Math.max(Math.min(Math.ceil((this.width + this.gap) / this.tileSize.x), this.maxCol), this.minCol);
 
-
 			var childs = this.$element.find('.floortiles-wrapper').children(),
 				state = {
 					tiles: [],
@@ -106,10 +105,7 @@
 					spaces: [],
 					holes: [],
 					poses: []
-				},
-				copy = [],
-				variants = [],
-				time;
+				};
 
 			for (var i = 0; i < childs.length; i++) {
 				var size = this.minSizeTile(childs.eq(i).data('tile'));
@@ -125,149 +121,16 @@
 				});
 			}
 
-			if (this.debug) time = performance.now(); // only for debug purpose
+			if (this.debug) var t = performance.now(); // only for debug purpose
 
-			this.sitAll(state);
-
-			// loop of iterations (under condition of existence of holes)
-			// with control of the number of iterations
-			for (var iteration = 0, i = 0; state.holes.length > 0 && iteration < 100; iteration++) {
-
-				// find the index of the tile that created the first hole
-				var j = state.order.findIndex(function(el) {return el == state.holes[i].i;});
-
-				// find the width of the hole
-				for (var k = 1; i + k < state.holes.length; k++) {
-					if (state.holes[i + k].x != state.holes[i].x + k || state.holes[i + k].y != state.holes[i].y) break;
-				}
-
-				// increase the width of the hole if the hole peeps out
-				for (; state.holes[i].x + k < this.columns; k++) {
-					if (state.spaces[state.holes[i].x + k].y > state.holes[i].y) break;
-				}
-
-				// find in the tiles lying after the tile that created the first hole,
-				// the first tile, which is maximally (in width) suitable for a hole
-				for (var l = j + 1, m = 0, n = 0; l < state.order.length; l++) {
-					if (state.tiles[state.order[l]].x == k) break;
-					if (state.tiles[state.order[l]].x < k && m < state.tiles[state.order[l]].x) {
-						m = state.tiles[state.order[l]].x;
-						n = l;
-					}
-				}
-				if (l >= state.order.length) l = n;
-
-				if (l > 0) {
-
-					// find a tile that can be inserted into the hole
-					k = state.tiles[state.order[l]].x;
-					// select of the tile sub-array and its special sort
-					copy = state.order.slice(j, l + 1).sort(function(a, b) {
-						if ((state.tiles[a].x == k && state.tiles[b].x == k) ||
-								(state.tiles[a].x != k && state.tiles[b].x != k)) {
-							return a - b;
-						} else if (state.tiles[a].x == k) {
-							return -1;
-						} else {
-							return 1;
-						};
-					});
-					k = copy.length;
-					while (k--) {
-						state.order[j + k] = copy[k];
-					}
-					copy.length = 0;
-
-				} else {
-
-					// there is no tile that can be inserted into the hole
-					l = state.holes[i].y;
-					for (var m = 0; m < j; m++) {
-						copy.push({
-							i: state.order[m],
-							y: state.poses[state.order[m]].y,
-							y2: state.poses[state.order[m]].y + state.tiles[state.order[m]].y
-						});
-					}
-
-					// define of a tile with which to begin a new reshuffle
-					n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
-					while (n[0].y < l) {
-						l = n[0].y;
-						n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
-					}
-					m = n[0].i;
-					copy.length = 0;
-
-					// reshuffle of tiles from bottom to top with a "rebound"
-					while (j--) {
-						if (state.tiles[state.order[j + 1]].x != state.tiles[state.order[j]].x) state.order.splice(j, 0, state.order.splice(j + 1, 1)[0]);
-						if (state.order[j + 1] == m) break;
-					}
-
-				}
-				this.resitAll(state);
-
-				n = state.order.slice(0);
-				var o = variants.findIndex(function(el) {return el.order.join() == n.join();});
-				if (o >= 0) break;
-				variants.push({
-					order: n,
-					holes: state.holes.length,
-					height: this.maxSpacesV(0, this.columns, state),
-					chaos: this.chaos(state)
-				});
-
-			}
-			variants.splice(0, n);
-			variants.sort(function(a, b) {
-				if ((a.holes != b.holes)) {
-					return a.holes - b.holes;
-				} else if ((a.height != b.height)) {
-					return a.height - b.height;
-				} else {
-					return a.chaos - b.chaos;
-				}
-			});
-			if (variants.length > 0) {
-				state.order = variants[0].order;
-				this.resitAll(state);
-			}
-
-
-console.log(state);
-			if (state.holes.length > 0) {
-				j = state.order.findIndex(function(el) {return el == state.holes[i].i;});
-
-				l = state.holes[i].y;
-				for (var m = 0; m < j; m++) {
-					copy.push({
-						i: state.order[m],
-						y: state.poses[state.order[m]].y,
-						y2: state.poses[state.order[m]].y + state.tiles[state.order[m]].y
-					});
-				}
-
-				n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
-				while (n[0].y < l) {
-					l = n[0].y;
-					n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
-				}
-				m = n[0].i;
-				copy.length = 0;
-
-				j = state.order.findIndex(function(el) {return el == m;});
-
-				console.log(m, j, state.order.slice(j));
-			}
-
+			i = this.assembly(state, this.columns, 0);
 
 			if (this.debug) console.log({ // only for debug purpose
-				iteration: iteration,
-				time: performance.now() - time,
-				variants: variants,
+				iteration: i,
+				time: performance.now() - t,
 				floortiles: this
 			});
+
 			this.result(state);
 		}
 
@@ -326,8 +189,157 @@ console.log(state);
 			});
 		}
 
-		sitAll(state) {
-			for (var i = 0; i < this.columns; i++) {
+		assembly(state, columns, iteration) {
+			var copy = [],
+				variants = [];
+
+			this.sitAll(state, columns);
+
+			// loop of iterations (under condition of existence of holes)
+			// with control of the number of iterations
+			for (; state.holes.length > 0 && iteration < 500; iteration++) {
+
+				// find the index of the tile that created the first hole
+				var j = state.order.findIndex(function(el) {return el == state.holes[0].i;});
+
+				// find the width of the hole
+				for (var k = 1; k < state.holes.length; k++) {
+					if (state.holes[k].x != state.holes[0].x + k || state.holes[k].y != state.holes[0].y) break;
+				}
+
+				// increase the width of the hole if the hole peeps out
+				for (; state.holes[0].x + k < columns; k++) {
+					if (state.spaces[state.holes[0].x + k].y > state.holes[0].y) break;
+				}
+
+				// find in the tiles lying after the tile that created the first hole,
+				// the first tile, which is maximally (in width) suitable for a hole
+				for (var l = j + 1, m = 0, n = 0; l < state.order.length; l++) {
+					if (state.tiles[state.order[l]].x == k) break;
+					if (state.tiles[state.order[l]].x < k && m < state.tiles[state.order[l]].x) {
+						m = state.tiles[state.order[l]].x;
+						n = l;
+					}
+				}
+				if (l >= state.order.length) l = n;
+
+				if (l > 0) {
+
+					// there is a tile that can be inserted into the hole
+					k = state.tiles[state.order[l]].x;
+
+					// select of the tile sub-array and its special sort
+					copy = state.order.slice(j, l + 1).sort(function(a, b) {
+						if ((state.tiles[a].x == k && state.tiles[b].x == k) ||
+								(state.tiles[a].x != k && state.tiles[b].x != k)) {
+							return a - b;
+						} else if (state.tiles[a].x == k) {
+							return -1;
+						} else {
+							return 1;
+						};
+					});
+					k = copy.length;
+					while (k--) {
+						state.order[j + k] = copy[k];
+					}
+					copy.length = 0;
+
+				} else {
+
+					// there is no tile that can be inserted into the hole
+					l = state.holes[0].y;
+					for (var m = 0; m < j; m++) {
+						copy.push({
+							i: state.order[m],
+							y: state.poses[state.order[m]].y,
+							y2: state.poses[state.order[m]].y + state.tiles[state.order[m]].y
+						});
+					}
+
+					// define of a tile with which to begin a new reshuffle
+					n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
+					while (n[0].y < l) {
+						l = n[0].y;
+						n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
+					}
+					m = n[0].i;
+					copy.length = 0;
+
+					// reshuffle of tiles from bottom to top with a "rebound"
+					while (j--) {
+						if (state.tiles[state.order[j + 1]].x != state.tiles[state.order[j]].x) state.order.splice(j, 0, state.order.splice(j + 1, 1)[0]);
+						if (state.order[j + 1] == m) break;
+					}
+
+				}
+				this.resitAll(state, columns);
+
+				n = state.order.slice(0);
+				var o = variants.findIndex(function(el) {return el.order.join() == n.join();});
+				if (o >= 0) break;
+				variants.push({
+					order: n,
+					holes: state.holes.length,
+					height: this.maxSpacesV(0, columns, state),
+					chaos: this.chaos(state)
+				});
+
+			}
+			variants.splice(0, n);
+			variants.sort(function(a, b) {
+				if ((a.holes != b.holes)) {
+					return a.holes - b.holes;
+				} else if ((a.height != b.height)) {
+					return a.height - b.height;
+				} else {
+					return a.chaos - b.chaos;
+				}
+			});
+			if (variants.length > 0) {
+				state.order = variants[0].order;
+				this.resitAll(state, columns);
+			}
+
+			if (state.holes.length > 0) {
+				// "дырки" остались и надо переходить к рекурсии (при уменьшении количества столбцов в окне)
+
+				// ниже определение под-массива state.order
+				j = state.order.findIndex(function(el) {return el == state.holes[0].i;});
+
+				l = state.holes[0].y;
+				for (var m = 0; m < j; m++) {
+					copy.push({
+						i: state.order[m],
+						y: state.poses[state.order[m]].y,
+						y2: state.poses[state.order[m]].y + state.tiles[state.order[m]].y
+					});
+				}
+
+				n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
+				while (n[0].y < l) {
+					l = n[0].y;
+					n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
+				}
+				m = n[0].i;
+				copy.length = 0;
+
+				j = state.order.findIndex(function(el) {return el == m;});
+
+				console.log(m, j, state.order.slice(j));
+			} else {
+				// здесь надо разместить обработку "хвостов"
+			}
+
+			if (this.debug) console.log({ // only for debug purpose
+				variants: variants
+			});
+
+			return iteration;
+		}
+
+		sitAll(state, columns) {
+			for (var i = 0; i < columns; i++) {
 				state.spaces[i] = {
 					y: 0,
 					v: 0
@@ -338,10 +350,10 @@ console.log(state);
 			}
 		}
 
-		resitAll(state) {
+		resitAll(state, columns) {
 			state.spaces.length = 0;
 			state.holes.length = 0;
-			this.sitAll(state);
+			this.sitAll(state, columns);
 		}
 
 		sit(tile, state, index) {
