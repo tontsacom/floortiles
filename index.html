@@ -50,8 +50,8 @@
 							<div data-tile="2x1"></div>
 							<div data-tile="3x1"></div>
 							<div data-tile="1x2"></div>
--->
 
+-->
 							<div data-tile="3x2"></div>
 							<div data-tile="2x3"></div>
 							<div data-tile="4x1"></div>
@@ -114,7 +114,7 @@
 
 				$('.floor .floortiles').floortiles({
 					debug: true,
-					tileSize: '120x90',
+					tileSize: '160x120',
 					minCol: 2,
 					maxCol: 6,
 					tiled: function (el, ui) {
@@ -161,9 +161,9 @@
 						$('.floortiles-ratio-value').html(r.toFixed(10));
 					},
 					stop: function(event, ui) {
-						var w = Math.round(Math.sqrt(120 * 90 * ui.value / 60));
+						var w = Math.round(Math.sqrt(160 * 120 * ui.value / 60));
 						$('.floortiles').floortiles({
-							tileSize: w + 'x' + Math.round(120 * 90 / w)
+							tileSize: w + 'x' + Math.round(160 * 120 / w)
 						});
 					}
 				});

@@ -249,28 +249,12 @@
 				} else {
 
 					// there is no tile that can be inserted into the hole
-					l = state.holes[0].y;
-					for (var m = start.i; m < j; m++) {
-						copy.push({
-							i: state.order[m],
-							y: state.poses[state.order[m]].y,
-							y2: state.poses[state.order[m]].y + state.tiles[state.order[m]].y
-						});
-					}
-
-					// define of a tile with which to begin a new reshuffle
-					n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
-					while (n[0].y < l) {
-						l = n[0].y;
-						n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
-					}
-					m = n[0].i;
-					copy.length = 0;
+					k = this.tileReshuffle(state, start);
 
 					// reshuffle of tiles from bottom to top with a "rebound"
 					while (--j >= start.i) {
 						if (state.tiles[state.order[j + 1]].x != state.tiles[state.order[j]].x) state.order.splice(j, 0, state.order.splice(j + 1, 1)[0]);
-						if (state.order[j + 1] == m) break;
+						if (state.order[j + 1] == k) break;
 					}
 
 				}
@@ -303,41 +287,48 @@
 			}
 
 			if (state.holes.length > 0) {
-				// "дырки" остались и надо переходить к рекурсии (при уменьшении количества столбцов в окне)
 
-				// ниже определение под-массива state.order
-				j = state.order.findIndex(function(el) {return el == state.holes[0].i;});
+				// holes remained and it is necessary to proceed to recursion (decrease the number of columns)
+				j = this.tileReshuffle(state, start);
+				k = state.order.findIndex(function(el) {return el == j;});
 
-				l = state.holes[0].y;
-				for (var m = 0; m < j; m++) {
-					copy.push({
-						i: state.order[m],
-						y: state.poses[state.order[m]].y,
-						y2: state.poses[state.order[m]].y + state.tiles[state.order[m]].y
-					});
+				// select of the tile sub-array and its sort
+				copy = state.order.slice(k).sort(function(a, b) {return a - b;});
+				l = copy.length;
+				while (l--) {
+					state.order[k + l] = copy[l];
 				}
+				this.sitAll(state, columns, start);
 
-				n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
-				while (n[0].y < l) {
-					l = n[0].y;
-					n = copy.filter(function(el) {return el.y <= l && el.y2 > l;}).sort(this.compareH);
-				}
-				m = n[0].i;
-				copy.length = 0;
-
-				j = state.order.findIndex(function(el) {return el == m;});
-
-				return this.assembly(state, columns - 1, iteration, {i: j, y: state.poses[state.order[j]].y, v: state.poses[state.order[j]].v});
+				return this.assembly(state, columns - 1, iteration, {i: k, y: state.poses[state.order[k]].y, v: state.poses[state.order[k]].v});
 
 			} else {
 				// здесь надо разместить обработку "хвостов"
 			}
-/*
-			if (this.debug) console.log({ // only for debug purpose
-				variants: variants
-			});
-*/
+
 			return iteration;
+		}
+
+		tileReshuffle(state, start) {
+			var i = state.order.findIndex(function(el) {return el == state.holes[0].i;}),
+				arr = [];
+
+			var j = state.holes[0].y;
+			for (var k = start.i; k < i; k++) {
+				arr.push({
+					i: state.order[k],
+					y: state.poses[state.order[k]].y,
+					y2: state.poses[state.order[k]].y + state.tiles[state.order[k]].y
+				});
+			}
+
+			// define of a tile with which to begin a new reshuffle
+			var f = arr.filter(function(el) {return el.y <= j && el.y2 > j;}).sort(this.compareH);
+			while (f[0].y < j) {
+				j = f[0].y;
+				f = arr.filter(function(el) {return el.y <= j && el.y2 > j;}).sort(this.compareH);
+			}
+			return f[0].i;
 		}
 
 		sitAll(state, columns, start) {
@@ -444,7 +435,10 @@
 				};
 
 				// define of the placement of a multiple hole
-// добавить возможную корректировку state.holes.i (если вставленная плитка образует дырки, отмеченные ранее)
+
+				// добавить корректировку state.holes.i (если вставленная плитка образует дырки, отмеченные ранее)
+				// через обработку всех дырок функцией замены образовавшей ее плитки (i)
+
 				for (var i = 0; i < state.holes.length; i++) {
 					if (state.holes[i].x == findTile.x && state.holes[i].y == findTile.y) break;
 				}
