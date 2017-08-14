@@ -5,6 +5,8 @@
  */
 (function($) {
 
+	const MAXITERATION = 500;
+
 	var optionsDefault = {
 		tileSize: {
 			x: 200,
@@ -200,6 +202,8 @@
 				n;
 
 			this.sitAll(state, columns, start);
+			if (this.debug) console.log(iteration, state.order.join());; // only for debug purpose
+
 			variants.push({
 				order: state.order.slice(0),
 				holes: state.holes.length,
@@ -209,7 +213,7 @@
 			});
 
 			// loop of iterations (with control of the number of iterations)
-			while (iteration++ < 500) {
+			while (iteration++ < MAXITERATION) {
 
 				if (state.holes.length > 0) {
 
@@ -265,9 +269,9 @@
 						k = this.tileReshuffle(state, start);
 
 						// reshuffle of tiles from bottom to top with a "rebound"
-						while (--j >= start.i) {
-							if (state.tiles[state.order[j + 1]].x != state.tiles[state.order[j]].x) state.order.splice(j, 0, state.order.splice(j + 1, 1)[0]);
-							if (state.order[j + 1] == k) break;
+						while (j-- > start.i) {
+							if (state.tiles[state.order[j]].x != state.tiles[state.order[j + 1]].x) state.order.splice(j, 0, state.order.splice(j + 1, 1)[0]);
+							if (state.order[j] == k || state.order[j + 1] == k) break;
 						}
 
 					}
@@ -303,7 +307,8 @@
 					state.order.splice(k, 0, state.order.splice(l, 1)[0]);
 
 				}
-				this.sitAll(state, columns, start);console.log(state.order.join(), iteration);
+				this.sitAll(state, columns, start);//console.log(iteration, state.order.join());
+				if (this.debug) console.log(iteration, state.order.join()); // only for debug purpose
 
 				n = state.order.slice(0);
 				var o = variants.findIndex(function(el) {return el.order.join() == n.join();});
@@ -329,12 +334,10 @@
 					return a.chaos - b.chaos;
 				}
 			});
-			if (variants.length > 0) {
-				state.order = variants[0].order;
-				this.sitAll(state, columns, start);
-			}
+			state.order = variants[0].order;
+			this.sitAll(state, columns, start);
 
-			if (state.holes.length > 0) {
+			if (state.holes.length > 0 && iteration < MAXITERATION) {
 
 				// holes remained and it is necessary to proceed to recursion (decrease the number of columns)
 				j = this.tileReshuffle(state, start);
