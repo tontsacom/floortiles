@@ -285,18 +285,22 @@
 						if (state.poses[state.order[l]].x == k && state.poses[state.order[l]].y + state.tiles[state.order[l]].y == state.spaces[k].y) break;
 					}
 
-					// определяем новое местоположение плитки (бывшей самой дальней)
+					// определяем ближайшую более раннюю плитку, меньшую по y и большую по x
 					j = l;
-					n = 0;
 					while (l--) {
-						if (state.poses[state.order[l]].y < state.spaces[k].y && state.poses[state.order[l]].y > n) {
-							m = l;
-							n = state.poses[state.order[l]].y;
-						}
+						if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
+								state.tiles[state.order[l]].x > state.tiles[state.order[j]].x) break;
+					}
+
+					// определяем ближайшую последующую после найденной плитки, равную по размерам исходной
+					k = l;
+					while (l++) {
+						if (state.tiles[state.order[l]].y == state.tiles[state.order[j]].y && 
+								state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
 					}
 
 					// reshuffle of tiles хвоста
-					state.order.splice(m, 0, state.order.splice(j, 1)[0]);
+					state.order.splice(k, 0, state.order.splice(l, 1)[0]);
 
 				}
 				this.sitAll(state, columns, start);console.log(state.order.join(), iteration);
