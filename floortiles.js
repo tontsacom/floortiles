@@ -202,7 +202,7 @@
 				n;
 
 			this.sitAll(state, columns, start);
-			if (this.debug) console.log(iteration, state.order.join());; // only for debug purpose
+			if (this.debug) console.log(iteration, state.order.join()); // only for debug purpose
 
 			variants.push({
 				order: state.order.slice(0),
@@ -296,18 +296,44 @@
 								state.tiles[state.order[l]].x > state.tiles[state.order[j]].x) break;
 					}
 
-					// определяем ближайшую последующую после найденной плитки, равную по размерам исходной
-					k = l;
-					while (l++) {
-						if (state.tiles[state.order[l]].y == state.tiles[state.order[j]].y && 
-								state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
+					if (l < 0) {console.log('не нашли более раннюю плитку, меньшую по y и большую по x');
+						// если не нашли такую
+						// определяем ближайшую более раннюю плитку, меньшую по y и равную по x
+						l = j;
+						while (l--) {
+							if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
+									state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
+						}
 					}
 
-					// reshuffle of tiles хвоста
-					state.order.splice(k, 0, state.order.splice(l, 1)[0]);
+					if (l < 0) {console.log('не нашли более раннюю плитку, меньшую по y и равную по x');
+						// если не нашли такую
+						// определяем ближайшую более раннюю плитку, меньшую или равную по y и меньшую по x
+						l = j;
+						while (l--) {
+							if (state.tiles[state.order[l]].y <= state.tiles[state.order[j]].y && 
+									state.tiles[state.order[l]].x < state.tiles[state.order[j]].x) break;
+						}
+					}
 
+					if (l < 0) {console.log('не нашли более раннюю плитку, меньшую или равную по y и меньшую по x');
+						// если не нашли и такую - сдаюсь !!
+
+						console.log('сдаюсь');
+
+					} else {
+						// определяем ближайшую последующую после найденной плитки, равную по размерам исходной
+						k = l;
+						while (l++) {
+							if (state.tiles[state.order[l]].y == state.tiles[state.order[j]].y && 
+									state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
+						}
+
+						// reshuffle of tiles хвоста
+						state.order.splice(k, 0, state.order.splice(l, 1)[0]);
+					}
 				}
-				this.sitAll(state, columns, start);//console.log(iteration, state.order.join());
+				this.sitAll(state, columns, start);
 				if (this.debug) console.log(iteration, state.order.join()); // only for debug purpose
 
 				n = state.order.slice(0);
@@ -322,7 +348,7 @@
 				});
 
 			}
-			variants.splice(0, n);
+			variants.splice(0, o);console.log(o);
 			variants.sort(function(a, b) {
 				if ((a.holes != b.holes)) {
 					return a.holes - b.holes;
