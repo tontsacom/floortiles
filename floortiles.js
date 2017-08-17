@@ -1,5 +1,5 @@
 /*!
- * FloorTiles v1.2 (https://github.com/tontsacom/floortiles)
+ * FloorTiles v1.3 (https://github.com/tontsacom/floortiles)
  * Copyright 2017
  * Licensed under the MIT license
  */
@@ -195,7 +195,7 @@
 		assembly(state, columns, iteration, start) {
 			var copy = [],
 				variants = [],
-				mode= 0,
+				mode = 0,
 				j,
 				k,
 				l,
@@ -204,11 +204,11 @@
 				o;
 
 			this.sitAll(state, columns, start);
-			if (this.debug) console.log(iteration, state.order.join(), mode); // only for debug purpose
+			if (this.debug) console.log(iteration, state.order.join()); // only for debug purpose
 
 			variants.push({
 				order: state.order.join(),
-				mode: mode,
+				mode: 0,
 				holes: state.holes.length,
 				height: this.maxSpacesV(0, columns, state),
 				tear: this.maxSpaces(0, columns, state) - this.minSpaces(0, columns, state),
@@ -219,6 +219,7 @@
 			while (iteration++ < MAXITERATION) {
 
 				if (state.holes.length > 0) {
+				mode = 0;
 
 					// find the index of the tile that created the first hole
 					j = state.order.findIndex(function(el) {return el == state.holes[0].i;});
@@ -252,13 +253,9 @@
 						// select of the tile sub-array and its special sort
 						copy = state.order.slice(j, l + 1).sort(function(a, b) {
 							if ((state.tiles[a].x == k && state.tiles[b].x == k) ||
-									(state.tiles[a].x != k && state.tiles[b].x != k)) {
-								return a - b;
-							} else if (state.tiles[a].x == k) {
-								return -1;
-							} else {
-								return 1;
-							};
+									(state.tiles[a].x != k && state.tiles[b].x != k)) return a - b;
+							if (state.tiles[a].x == k) return -1;
+							return 1;
 						});
 						k = copy.length;
 						while (k--) {
@@ -278,9 +275,8 @@
 						}
 
 					}
-					mode = 0;
 
-				} else {console.log(variants[variants.length - 1].tear);
+				} else {
 
 					// здесь обработка "хвостов" (в раскладке без дыр)
 					if (variants[variants.length - 1].tear < 2) break;
@@ -295,17 +291,17 @@
 					j = l;
 					l = -1; // упростить потом !!!
 
-					if (mode < 2) {
+					if (mode < 1) {
 						// ищем ближайшую более раннюю плитку, меньшую по y и большую по x
 						l = j;
 						while (l--) {
 							if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
 									state.tiles[state.order[l]].x > state.tiles[state.order[j]].x) break;
 						}
-						mode = 1;
+						mode = 0;
 					}
 
-					if (l < 0 && mode < 3) {console.log('не нашли более раннюю плитку, меньшую по y и большую по x');
+					if (l < 0 && mode < 2) {console.log('не нашли более раннюю плитку, меньшую по y и большую по x');
 						// если не нашли такую
 						// определяем ближайшую более раннюю плитку, меньшую по y и равную по x
 						l = j;
@@ -313,10 +309,10 @@
 							if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
 									state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
 						}
-						mode = 2;
+						mode = 1;
 					}
 
-					if (l < 0 && mode < 4) {console.log('не нашли более раннюю плитку, меньшую по y и равную по x');
+					if (l < 0 && mode < 3) {console.log('не нашли более раннюю плитку, меньшую по y и равную по x');
 						// если не нашли такую
 						// определяем ближайшую более раннюю плитку, меньшую или равную по y и меньшую по x
 						l = j;
@@ -324,14 +320,14 @@
 							if (state.tiles[state.order[l]].y <= state.tiles[state.order[j]].y && 
 									state.tiles[state.order[l]].x < state.tiles[state.order[j]].x) break;
 						}
-						mode = 3;
+						mode = 2;
 					}
 
 					if (l < 0) {console.log('не нашли более раннюю плитку, меньшую или равную по y и меньшую по x');
 						// если не нашли и такую - сдаюсь !!
 
 						console.log('сдаюсь');
-						mode = 4;
+						mode = 3;
 						break;
 
 					} else {
@@ -347,21 +343,41 @@
 					}
 				}
 				this.sitAll(state, columns, start);
-				if (this.debug) console.log(iteration, state.order.join(), mode, state.holes.length, this.maxSpaces(0, columns, state) - this.minSpaces(0, columns, state)); // only for debug purpose
+				if (this.debug) console.log(iteration, state.order.join()); // only for debug purpose
 
 				n = state.order.join();
-				o = variants.findIndex(function(el) {return el.order == n && el.mode == mode;});
-				if (o >= 0) {console.log(o);
-					if (mode == 0 || mode > 3) break;
-					mode++;
+				o = variants.findIndex(function(el) {return el.order == n;});
+				if (o >= 0) {
+					// такая раскладка уже была
+
+					// инкремент mode, если дырок нет
+//					if (state.holes.length == 0) variants[o].mode++;
+
+					copy = variants.slice(0).sort(function(a, b) {
+						if (a.holes != b.holes) return a.holes - b.holes;
+						return a.mode - b.mode;
+					});
+
+					if ((copy[0].holes == 0 && copy[0].mode > 2) || copy[0].holes > 0 ) {
+						// если раскладка без дыр, но проверены все варианты перестановок, либо раскладок без дыр не обнаружено
+
+						copy.length = 0;
+						break;
+					}
+
+					// выбор продолжения перебора
+					n = copy[0].order;
+					o = variants.findIndex(function(el) {return el.order == n;});
+					copy.length = 0;
+					mode = variants[o].mode++;
 					iteration--;
-					this.splitOrder(variants[variants.length - 1].order, state);
+					this.splitOrder(variants[o].order, state);
 					this.sitAll(state, columns, start);
 					continue;
 				}
 				variants.push({
 					order: n,
-					mode: mode,
+					mode: 0,
 					holes: state.holes.length,
 					height: this.maxSpacesV(0, columns, state),
 					tear: this.maxSpaces(0, columns, state) - this.minSpaces(0, columns, state),
@@ -371,21 +387,16 @@
 			}
 
 			if (iteration < MAXITERATION) {
-				if (o > 0) variants.splice(0, o);console.log(o);
+				if (o > 0) variants.splice(0, o);
 				variants.sort(function(a, b) {
-					if ((a.holes != b.holes)) {
-						return a.holes - b.holes;
-					} else if ((a.height != b.height)) {
-						return a.height - b.height;
-					} else if ((a.tear != b.tear)) {
-						return a.tear - b.tear;
-					} else {
-						return a.chaos - b.chaos;
-					}
+					if (a.holes != b.holes) return a.holes - b.holes;
+					if (a.height != b.height) return a.height - b.height;
+					if (a.tear != b.tear) return a.tear - b.tear;
+					return a.chaos - b.chaos;
 				});
-				this.splitOrder(variants[0].order, state);console.log(variants[0].order);
+				this.splitOrder(variants[0].order, state);
 				this.sitAll(state, columns, start);
-		}
+			}
 
 			if (state.holes.length > 0 && iteration < MAXITERATION) {
 
@@ -620,19 +631,13 @@
 		}
 
 		compareH(a, b) {
-			if (a.y != b.y) {
-				return a.y - b.y;
-			} else {
-				return a.x - b.x;
-			}
+			if (a.y != b.y) return a.y - b.y;
+			return a.x - b.x;
 		}
 
 		compareV(a, b) {
-			if (a.x != b.x) {
-				return a.x - b.x;
-			} else {
-				return a.y - b.y;
-			}
+			if (a.x != b.x) return a.x - b.x;
+			return a.y - b.y;
 		}
 /*
 		onSit(el, ui) {
