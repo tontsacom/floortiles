@@ -298,10 +298,10 @@
 							if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
 									state.tiles[state.order[l]].x > state.tiles[state.order[j]].x) break;
 						}
-						mode = 0;
+//						mode = 0;
 					}
 
-					if (l < 0 && mode < 2) {console.log('не нашли более раннюю плитку, меньшую по y и большую по x');
+					if (l < 0 && mode < 2) {//console.log('не нашли более раннюю плитку, меньшую по y и большую по x');
 						// если не нашли такую
 						// определяем ближайшую более раннюю плитку, меньшую по y и равную по x
 						l = j;
@@ -309,10 +309,10 @@
 							if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
 									state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
 						}
-						mode = 1;
+//						mode = 1;
 					}
 
-					if (l < 0 && mode < 3) {console.log('не нашли более раннюю плитку, меньшую по y и равную по x');
+					if (l < 0 && mode < 3) {//console.log('не нашли более раннюю плитку, меньшую по y и равную по x');
 						// если не нашли такую
 						// определяем ближайшую более раннюю плитку, меньшую или равную по y и меньшую по x
 						l = j;
@@ -320,14 +320,14 @@
 							if (state.tiles[state.order[l]].y <= state.tiles[state.order[j]].y && 
 									state.tiles[state.order[l]].x < state.tiles[state.order[j]].x) break;
 						}
-						mode = 2;
+//						mode = 2;
 					}
 
-					if (l < 0) {console.log('не нашли более раннюю плитку, меньшую или равную по y и меньшую по x');
+					if (l < 0) {//console.log('не нашли более раннюю плитку, меньшую или равную по y и меньшую по x');
 						// если не нашли и такую - сдаюсь !!
 
 						console.log('сдаюсь');
-						mode = 3;
+//						mode = 3;
 						break;
 
 					} else {
@@ -350,9 +350,6 @@
 				if (o >= 0) {
 					// такая раскладка уже была
 
-					// инкремент mode, если дырок нет
-//					if (state.holes.length == 0) variants[o].mode++;
-
 					copy = variants.slice(0).sort(function(a, b) {
 						if (a.holes != b.holes) return a.holes - b.holes;
 						return a.mode - b.mode;
@@ -369,6 +366,8 @@
 					n = copy[0].order;
 					o = variants.findIndex(function(el) {return el.order == n;});
 					copy.length = 0;
+
+					// инкремент mode, если дырок нет
 					mode = variants[o].mode++;
 					iteration--;
 					this.splitOrder(variants[o].order, state);
@@ -386,8 +385,8 @@
 
 			}
 
-			if (iteration < MAXITERATION) {
-				if (o > 0) variants.splice(0, o);
+			if (!this.debug && iteration < MAXITERATION) {
+//				if (o > 0) variants.splice(0, o);
 				variants.sort(function(a, b) {
 					if (a.holes != b.holes) return a.holes - b.holes;
 					if (a.height != b.height) return a.height - b.height;
