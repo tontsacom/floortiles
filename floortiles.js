@@ -195,17 +195,20 @@
 		assembly(state, columns, iteration, start) {
 			var copy = [],
 				variants = [],
+				mode= 0,
 				j,
 				k,
 				l,
 				m,
-				n;
+				n,
+				o;
 
 			this.sitAll(state, columns, start);
-			if (this.debug) console.log(iteration, state.order.join()); // only for debug purpose
+			if (this.debug) console.log(iteration, state.order.join(), mode); // only for debug purpose
 
 			variants.push({
-				order: state.order.slice(0),
+				order: state.order.join(),
+				mode: mode,
 				holes: state.holes.length,
 				height: this.maxSpacesV(0, columns, state),
 				tear: this.maxSpaces(0, columns, state) - this.minSpaces(0, columns, state),
@@ -275,8 +278,9 @@
 						}
 
 					}
+					mode = 0;
 
-				} else {
+				} else {console.log(variants[variants.length - 1].tear);
 
 					// здесь обработка "хвостов" (в раскладке без дыр)
 					if (variants[variants.length - 1].tear < 2) break;
@@ -288,15 +292,20 @@
 					while (l--) {
 						if (state.poses[state.order[l]].x == k && state.poses[state.order[l]].y + state.tiles[state.order[l]].y == state.spaces[k].y) break;
 					}
-
-					// определяем ближайшую более раннюю плитку, меньшую по y и большую по x
 					j = l;
-					while (l--) {
-						if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
-								state.tiles[state.order[l]].x > state.tiles[state.order[j]].x) break;
+					l = -1; // упростить потом !!!
+
+					if (mode < 2) {
+						// ищем ближайшую более раннюю плитку, меньшую по y и большую по x
+						l = j;
+						while (l--) {
+							if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
+									state.tiles[state.order[l]].x > state.tiles[state.order[j]].x) break;
+						}
+						mode = 1;
 					}
 
-					if (l < 0) {console.log('не нашли более раннюю плитку, меньшую по y и большую по x');
+					if (l < 0 && mode < 3) {console.log('не нашли более раннюю плитку, меньшую по y и большую по x');
 						// если не нашли такую
 						// определяем ближайшую более раннюю плитку, меньшую по y и равную по x
 						l = j;
@@ -304,9 +313,10 @@
 							if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
 									state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
 						}
+						mode = 2;
 					}
 
-					if (l < 0) {console.log('не нашли более раннюю плитку, меньшую по y и равную по x');
+					if (l < 0 && mode < 4) {console.log('не нашли более раннюю плитку, меньшую по y и равную по x');
 						// если не нашли такую
 						// определяем ближайшую более раннюю плитку, меньшую или равную по y и меньшую по x
 						l = j;
@@ -314,12 +324,15 @@
 							if (state.tiles[state.order[l]].y <= state.tiles[state.order[j]].y && 
 									state.tiles[state.order[l]].x < state.tiles[state.order[j]].x) break;
 						}
+						mode = 3;
 					}
 
 					if (l < 0) {console.log('не нашли более раннюю плитку, меньшую или равную по y и меньшую по x');
 						// если не нашли и такую - сдаюсь !!
 
 						console.log('сдаюсь');
+						mode = 4;
+						break;
 
 					} else {
 						// определяем ближайшую последующую после найденной плитки, равную по размерам исходной
@@ -334,13 +347,21 @@
 					}
 				}
 				this.sitAll(state, columns, start);
-				if (this.debug) console.log(iteration, state.order.join()); // only for debug purpose
+				if (this.debug) console.log(iteration, state.order.join(), mode, state.holes.length, this.maxSpaces(0, columns, state) - this.minSpaces(0, columns, state)); // only for debug purpose
 
-				n = state.order.slice(0);
-				var o = variants.findIndex(function(el) {return el.order.join() == n.join();});
-				if (o >= 0) break;
+				n = state.order.join();
+				o = variants.findIndex(function(el) {return el.order == n && el.mode == mode;});
+				if (o >= 0) {console.log(o);
+					if (mode == 0 || mode > 3) break;
+					mode++;
+					iteration--;
+					this.splitOrder(variants[variants.length - 1].order, state);
+					this.sitAll(state, columns, start);
+					continue;
+				}
 				variants.push({
 					order: n,
+					mode: mode,
 					holes: state.holes.length,
 					height: this.maxSpacesV(0, columns, state),
 					tear: this.maxSpaces(0, columns, state) - this.minSpaces(0, columns, state),
@@ -348,20 +369,23 @@
 				});
 
 			}
-			variants.splice(0, o);console.log(o);
-			variants.sort(function(a, b) {
-				if ((a.holes != b.holes)) {
-					return a.holes - b.holes;
-				} else if ((a.height != b.height)) {
-					return a.height - b.height;
-				} else if ((a.tear != b.tear)) {
-					return a.tear - b.tear;
-				} else {
-					return a.chaos - b.chaos;
-				}
-			});
-			state.order = variants[0].order;
-			this.sitAll(state, columns, start);
+
+			if (iteration < MAXITERATION) {
+				if (o > 0) variants.splice(0, o);console.log(o);
+				variants.sort(function(a, b) {
+					if ((a.holes != b.holes)) {
+						return a.holes - b.holes;
+					} else if ((a.height != b.height)) {
+						return a.height - b.height;
+					} else if ((a.tear != b.tear)) {
+						return a.tear - b.tear;
+					} else {
+						return a.chaos - b.chaos;
+					}
+				});
+				this.splitOrder(variants[0].order, state);console.log(variants[0].order);
+				this.sitAll(state, columns, start);
+		}
 
 			if (state.holes.length > 0 && iteration < MAXITERATION) {
 
@@ -705,6 +729,14 @@
 				c += Math.abs(i - state.order[i]);
 			}
 			return c;
+		}
+
+		splitOrder(str, state) {
+			var order = str.split(','),
+				i = order.length;
+			while (i--) {
+				state.order[i] = parseInt(order[i]);
+			}
 		}
 
 	}
