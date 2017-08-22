@@ -5,7 +5,7 @@
  */
 (function($) {
 
-	const MAXITERATION = 700;
+	const MAXITERATION = 5000;
 
 	var optionsDefault = {
 		tileSize: {
@@ -150,7 +150,7 @@
 			for (var i = 0; i < state.tiles.length; i++) {
 				pos = state.poses[i];
 				tile = this.boundSize(state.tiles[i]);
-				tileR = this.boundSizeR(tile);
+				tileR = this.boundSizeR(tile, this.columns);
 				posR = {
 					x: step.x * pos.x,
 					y: step.y * pos.v
@@ -196,7 +196,7 @@
 			var variants = [],
 				copy = [],
 				variant,
-				mode,
+				mode = 0,
 				holes,
 				tear,
 				j,
@@ -225,65 +225,88 @@
 			while (iteration++ < MAXITERATION) {
 
 				if (holes > 0) {
-				mode = 0;
 
 					// find the index of the tile that created the first hole
 					j = state.order.findIndex(function(el) {return el == state.holes[0].i;});
 
-					// find the width of the hole
-					for (k = 1; k < holes; k++) {
-						if (state.holes[k].x != state.holes[0].x + k ||
-								state.holes[k].y != state.holes[0].y) break;
-					}
+					switch (mode) {
+						case 0:
+							// find the width of the hole
+							for (k = 1; k < holes; k++) {
+								if (state.holes[k].x != state.holes[0].x + k ||
+										state.holes[k].y != state.holes[0].y) break;
+							}
 
-					// increase the width of the hole if the hole peeps out
-					for (; state.holes[0].x + k < columns; k++) {
-						if (state.spaces[state.holes[0].x + k].y > state.holes[0].y) break;
-					}
+							// increase the width of the hole if the hole peeps out
+							for (; state.holes[0].x + k < columns; k++) {
+								if (state.spaces[state.holes[0].x + k].y > state.holes[0].y) break;
+							}
 
-					// find in the tiles lying after the tile that created the first hole,
-					// the first tile, which is maximally (in width) suitable for a hole
-					for (l = j + 1, m = 0, n = 0; l < state.order.length; l++) {
-						if (state.poses[state.order[l]].y >= state.poses[state.order[j]].y &&
-								state.tiles[state.order[l]].x == k) break;
-						if (state.poses[state.order[l]].y >= state.poses[state.order[j]].y && 
-								state.tiles[state.order[l]].x < k && m < state.tiles[state.order[l]].x) {
-							m = state.tiles[state.order[l]].x;
-							n = l;
-						}
-					}
-					if (l >= state.order.length) l = n;
+							// find in the tiles lying after the tile that created the first hole,
+							// the first tile, which is maximally (in width) suitable for a hole
+							for (l = j + 1, m = 0, n = 0; l < state.order.length; l++) {
+								if (state.poses[state.order[l]].y >= state.poses[state.order[j]].y &&
+										state.tiles[state.order[l]].x == k) break;
+								if (state.poses[state.order[l]].y >= state.poses[state.order[j]].y && 
+										state.tiles[state.order[l]].x < k &&
+										state.tiles[state.order[l]].x > m) {
+									m = state.tiles[state.order[l]].x;
+									n = l;
+								}
+							}
+							if (l >= state.order.length) l = n;
 
-					if (l > 0) {
+							if (l > 0) {
 
-						// there is a tile that can be inserted into the hole
-						k = state.tiles[state.order[l]].x;
+								// there is a tile that can be inserted into the hole
+								k = state.tiles[state.order[l]].x;
 
-						// select of the tile sub-array and its special sort
-						copy = state.order.slice(j, l + 1).sort(function(a, b) {
-							if ((state.tiles[a].x == k && state.tiles[b].x == k) ||
-									(state.tiles[a].x != k && state.tiles[b].x != k)) return a - b;
-							if (state.tiles[a].x == k) return -1;
-							return 1;
-						});
-						k = copy.length;
-						while (k--) {
-							state.order[j + k] = copy[k];
-						}
-						copy.length = 0;
+								// select of the tile sub-array and its special sort
+								copy = state.order.slice(j, l + 1).sort(function(a, b) {
+									if ((state.tiles[a].x == k && state.tiles[b].x == k) ||
+											(state.tiles[a].x != k && state.tiles[b].x != k)) return a - b;
+									if (state.tiles[a].x == k) return -1;
+									return 1;
+								});
+								k = copy.length;
+								while (k--) {
+									state.order[j + k] = copy[k];
+								}
+								copy.length = 0;
 
-					} else {
+							} else {
 
-						// there is no tile that can be inserted into the hole
-console.log(state.holes);
-						k = this.tileReshuffle(state, start);
+								// there is no tile that can be inserted into the hole
+								k = this.tileReshuffle(state, start);
 
-						// reshuffle of tiles from bottom to top with a "rebound"
-						while (j-- > start.i) {
-							if (state.tiles[state.order[j]].x != state.tiles[state.order[j + 1]].x) state.order.splice(j, 0, state.order.splice(j + 1, 1)[0]);
-							if (state.order[j] == k || state.order[j + 1] == k) break;
-						}
+								// reshuffle of tiles from bottom to top with a "rebound"
+								while (j-- > start.i) {
+									if (state.tiles[state.order[j]].x != state.tiles[state.order[j + 1]].x) state.order.splice(j, 0, state.order.splice(j + 1, 1)[0]);
+									if (state.order[j] == k || state.order[j + 1] == k) break;
+								}
 
+							}
+							break;
+
+						case 1:
+							// ищем ближайшую комбинацию плиток 1x2 и 1x1
+							m = 0;
+							while (j-- > start.i) {
+								if (state.tiles[state.order[j]].y == 2 && 
+										state.tiles[state.order[j]].x == 1) {
+									m = 1;
+									k = j;
+								} else if (state.tiles[state.order[j]].y == 1 && 
+										state.tiles[state.order[j]].x == 1 && 
+										m == 1) {
+									m = 2;
+									l = j;
+									break;
+								}
+							}
+
+							// reshuffle of tiles хвоста
+							if (m == 2) state.order.splice(l, 0, state.order.splice(k, 1)[0]);
 					}
 
 				} else {
@@ -294,12 +317,11 @@ console.log(state.holes);
 					// определяем самую дальнюю плитку
 					j = this.maxSpaces(state, 0, columns);
 					k = state.spaces.findIndex(function(el) {return el.y == j;});
-					l = state.order.length;
-					while (l--) {
-						if (state.poses[state.order[l]].x == k && state.poses[state.order[l]].y + state.tiles[state.order[l]].y == state.spaces[k].y) break;
+					j = state.order.length;
+					while (j-- > start.i) {
+						if (state.poses[state.order[j]].x == k && 
+								state.poses[state.order[j]].y + state.tiles[state.order[j]].y == state.spaces[k].y) break;
 					}
-					j = l;
-					l = -1; // упростить потом !!!
 
 					switch (mode) {
 						case 0:
@@ -310,119 +332,96 @@ console.log(state.holes);
 								case 0:
 									// ищем ближайшую более раннюю плитку, меньшую по y и большую по x
 									l = j;
-									while (l--) {
+									while (l-- > start.i) {
 										if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
 												state.tiles[state.order[l]].x > state.tiles[state.order[j]].x) break;
 									}
-									if (l >= 0) break;
+									if (l >= start.i) break;
 									variants[variant].mode++;
 								case 1:
-									// определяем ближайшую более раннюю плитку, меньшую по y и равную по x
+									// ищем ближайшую более раннюю плитку, меньшую по y и равную по x
 									l = j;
-									while (l--) {
+									while (l-- > start.i) {
 										if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
 												state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
 									}
-									if (l >= 0) break;
+									if (l >= start.i) break;
 									variants[variant].mode++;
 								case 2:
-									// определяем ближайшую более раннюю плитку, меньшую или равную по y и меньшую по x
-									l = j;
-									while (l--) {
-										if (state.tiles[state.order[l]].y <= state.tiles[state.order[j]].y && 
-												state.tiles[state.order[l]].x < state.tiles[state.order[j]].x) break;
+									// берем первую, не равную самой дальней, плитку в качестве ближайшей более ранней плитки
+									for (l = start.i; l < j; l++) {
+										if (state.tiles[state.order[l]].y != state.tiles[state.order[j]].y && 
+												state.tiles[state.order[l]].x != state.tiles[state.order[j]].x) break;
 									}
-									if (l >= 0) break;
+									if (l < j) break;
 									variants[variant].mode++;
-								break;
 							}
 
-							// определяем ближайшую последующую после найденной плитки, равную по размерам исходной
-							k = l;
-							while (l++) {
-								if (state.tiles[state.order[l]].y == state.tiles[state.order[j]].y && 
-										state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
+							if (l >= start.i && l < j) {
+								// если нужная плитка была найдена среди более ранних
+								// ищем ближайшую последующую после найденной плитки, равную по размерам исходной
+								k = l;
+								while (l++) {
+									if (state.tiles[state.order[l]].y == state.tiles[state.order[j]].y && 
+											state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
+								}
+
+								// reshuffle of tiles хвоста
+								state.order.splice(k, 0, state.order.splice(l, 1)[0]);
+
+								break;
+							};
+
+						case 3:
+
+							// ищем ближайшую комбинацию плиток 1x2 и 1x1
+							m = 0;
+							while (j-- > start.i) {
+								if (state.tiles[state.order[j]].y == 2 && 
+										state.tiles[state.order[j]].x == 1) {
+									m = 1;
+									k = j;
+								} else if (state.tiles[state.order[j]].y == 1 && 
+										state.tiles[state.order[j]].x == 1 && 
+										m == 1) {
+									m = 2;
+									l = j;
+									break;
+								}
 							}
 
 							// reshuffle of tiles хвоста
-							state.order.splice(k, 0, state.order.splice(l, 1)[0]);
-
-						break;
-						case 3:
-							console.log('сдаюсь');
-						break;
+							if (m == 2) state.order.splice(l, 0, state.order.splice(k, 1)[0]);
 					}
 
-/*					if (mode < 1) {
-						// ищем ближайшую более раннюю плитку, меньшую по y и большую по x
-						l = j;
-						while (l--) {
-							if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
-									state.tiles[state.order[l]].x > state.tiles[state.order[j]].x) break;
-						}
-						// mode = 0;
-						if (l < 0) variants[variant].mode++;
-					}
-
-					if (l < 0 && mode < 2) {console.log('не нашли более раннюю плитку, меньшую по y и большую по x');
-						// если не нашли такую
-						// определяем ближайшую более раннюю плитку, меньшую по y и равную по x
-						l = j;
-						while (l--) {
-							if (state.tiles[state.order[l]].y < state.tiles[state.order[j]].y && 
-									state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
-						}
-						// mode = 1;
-						if (l < 0) variants[variant].mode++;
-					}
-
-					if (l < 0 && mode < 3) {console.log('не нашли более раннюю плитку, меньшую по y и равную по x');
-						// если не нашли такую
-						// определяем ближайшую более раннюю плитку, меньшую или равную по y и меньшую по x
-						l = j;
-						while (l--) {
-							if (state.tiles[state.order[l]].y <= state.tiles[state.order[j]].y && 
-									state.tiles[state.order[l]].x < state.tiles[state.order[j]].x) break;
-						}console.log(j, l);
-						// mode = 2;
-						if (l < 0) variants[variant].mode++;
-					}
-
-					if (l < 0) {console.log('не нашли более раннюю плитку, меньшую или равную по y и меньшую по x');
-						// если не нашли и такую - сдаюсь !!
-
-						console.log('сдаюсь');
-						// mode = 3;
-						break;
-
-					} else {
-						// определяем ближайшую последующую после найденной плитки, равную по размерам исходной
-						k = l;
-						while (l++) {
-							if (state.tiles[state.order[l]].y == state.tiles[state.order[j]].y && 
-									state.tiles[state.order[l]].x == state.tiles[state.order[j]].x) break;
-						}
-
-						// reshuffle of tiles хвоста
-						state.order.splice(k, 0, state.order.splice(l, 1)[0]);console.log(state.order);
-console.log(k, l);
-					}console.log(mode);*/
 				}
 				this.sitAll(state, columns, start);
-				if (this.debug) console.log(iteration, state.holes.length, state.order.join()); // only for debug purpose
+				if (this.debug) console.log(iteration, state.holes.length, state.order.join(), this.maxSpaces(state, 0, columns) - this.minSpaces(state, 0, columns)); // only for debug purpose
 
 				n = state.order.join();
 				o = variants.findIndex(function(el) {return el.order == n;});
 				if (o >= 0) {
 					// такая раскладка уже была
-
+					if (this.debug) console.log('повторяющаяся раскладка: ' + o); // only for debug purpose
+/*
 					copy = variants.slice(0).sort(function(a, b) {
 						if (a.holes != b.holes) return a.holes - b.holes;
 						return a.mode - b.mode;
 					});
+*/
+					copy = variants.slice(0).sort(function(a, b) {
+						if (a.holes != b.holes) return a.holes - b.holes;
+						return a.tear - b.tear;
+					});
+					if (copy.length > 1) copy.length = 1;
+					copy.sort(function(a, b) {
+						if (a.holes != b.holes) return a.holes - b.holes;
+						return a.mode - b.mode;
+					});console.log(copy[0].order);
 
-					if ((copy[0].holes == 0 && copy[0].mode > 2) || copy[0].holes > 0 ) {
-						// если раскладка без дыр, но проверены все варианты перестановок, либо раскладок без дыр не обнаружено
+					if ((copy[0].holes == 0 && copy[0].mode > 3) ||
+							(copy[0].holes > 0 && copy[0].mode > 1)) {
+						// если проверены все варианты перестановок
 
 						copy.length = 0;
 						break;
@@ -434,13 +433,14 @@ console.log(k, l);
 					copy.length = 0;
 
 					// инкремент mode, если дырок нет
-					mode = ++variants[o].mode;console.log(mode, o, variants[o]);
+					mode = ++variants[o].mode;
 					holes = variants[o].holes;
 					tear = variants[o].tear;
 					variant = o;
 					iteration--;
 					this.splitOrder(state, variants[o].order);
 					this.sitAll(state, columns, start);
+					if (holes == 0 && tear < 2) break;
 					continue;
 				}
 				holes = state.holes.length;
@@ -453,6 +453,7 @@ console.log(k, l);
 					tear: tear,
 					chaos: this.chaos(state)
 				});
+				mode = 0;
 				variant = variants.length - 1;
 
 			}
@@ -482,6 +483,11 @@ console.log(k, l);
 					state.order[k + l] = copy[l];
 				}
 				this.sitAll(state, columns, start);
+				if (this.debug) console.log(state, columns - 1, iteration, {
+						i: k,
+						y: state.poses[state.order[k]].y,
+						v: state.poses[state.order[k]].v
+					}); // only for debug purpose
 
 				return this.assembly(state, columns - 1, iteration, {i: k, y: state.poses[state.order[k]].y, v: state.poses[state.order[k]].v});
 			}
@@ -515,33 +521,33 @@ console.log(k, l);
 			for (var i = 0; i < columns; i++) {
 				state.spaces[i] = {
 					y: start.y,
-					v: start.y
+					v: start.v
 				};
 			}
 			state.holes.length = 0;
 			for (var i = start.i; i < state.order.length; i++) {
-				state.poses[state.order[i]] = this.sit(state.tiles[state.order[i]], state, state.order[i]);
+				state.poses[state.order[i]] = this.sit(state.tiles[state.order[i]], state, columns, state.order[i]);
 			}
 		}
 
-		sit(tile, state, index) {
+		sit(tile, state, columns, index) {
 			var sitTile = this.boundSize(tile),
 				findTile;
 
-			if (sitTile.x >= this.columns) {
+			if (sitTile.x >= columns) {
 
 				// if the width of the tile is not less than the width of the window
-				sitTile = this.boundSizeR(sitTile);
+				sitTile = this.boundSizeR(sitTile, columns);
 
 				// position for a new tile
 				findTile = {
 					x: 0,
-					y: this.maxSpaces(state, 0, this.columns),
-					v: this.maxSpacesV(state, 0, this.columns)
+					y: this.maxSpaces(state, 0, columns),
+					v: this.maxSpacesV(state, 0, columns)
 				};
 
 				// define new holes and correct free ends
-				for (var i = 0; i < this.columns; i++) {
+				for (var i = 0; i < columns; i++) {
 					for (var j = state.spaces[i].y; j < findTile.y; j++) {
 						state.holes.push({
 							x: i,
@@ -564,11 +570,11 @@ console.log(k, l);
 			}
 
 			// if the width of the tile is less than the width of the window
-			sitTile = this.boundSizeR(sitTile);
+			sitTile = this.boundSizeR(sitTile, columns);
 
 			// define information about multiple (width equal to sitTile.x) free ends
 			var spacesM = [];
-			for (var i = 0; i < this.columns - sitTile.x + 1; i++) {
+			for (var i = 0; i < columns - sitTile.x + 1; i++) {
 				spacesM[i] = {
 					x: i,
 					y: this.maxSpaces(state, i, i + sitTile.x),
@@ -583,7 +589,7 @@ console.log(k, l);
 				var base = state.holes[i];
 				for (var j = 1; j < sitTile.x; j++) {
 					if ((i + j >= state.holes.length || state.holes[i + j].x != base.x + j || state.holes[i + j].y != base.y) &&
-						(state.holes[i].x + j >= this.columns || state.spaces[state.holes[i].x + j].y > base.y)) break;
+						(state.holes[i].x + j >= columns || state.spaces[state.holes[i].x + j].y > base.y)) break;
 				}
 				if (j == sitTile.x) holesM.push(base);
 			}
@@ -758,14 +764,14 @@ console.log(k, l);
 			};
 		}
 
-		boundSizeR(tile) {
-			if (tile.x > this.columns) return {
+		boundSizeR(tile, columns) {
+			if (tile.x > columns) return {
 				x: this.columns,
 				y: 1,
-				v: tile.y / tile.x * this.columns
+				v: tile.y / tile.x * columns
 			}
-			if (tile.x == this.columns) return {
-				x: this.columns,
+			if (tile.x == columns) return {
+				x: columns,
 				y: 1,
 				v: tile.y
 			}
@@ -802,7 +808,7 @@ console.log(k, l);
 
 		chaos(state) {
 			for (var i = 0, c = 0; i < state.order.length; i++) {
-				c += Math.abs(i - state.order[i]);
+				c += Math.pow(i - state.order[i], 2);
 			}
 			return c;
 		}
