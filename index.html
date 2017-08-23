@@ -79,6 +79,7 @@
 							<div data-tile="2x3"></div>
 							<div data-tile="4x1"></div>
 
+-->
 							<div data-tile="2x1"></div>
 							<div data-tile="3x1"></div>
 							<div data-tile="1x2"></div>
@@ -98,7 +99,7 @@
 							<div data-tile="1x2"></div>
 							<div data-tile="1x2"></div>
 							<div data-tile="2x1"></div>
--->
+<!--
 
 							<div data-tile="1x1"></div>
 							<div data-tile="1x1"></div>
@@ -119,7 +120,6 @@
 							<div data-tile="1x3"></div>
 							<div data-tile="2x3"></div>
 							<div data-tile="3x1"></div>
-<!--
 -->
 						</div>
 					</div>
@@ -139,7 +139,7 @@
 			jQuery(document).ready(function($) {
 
 				$('.floor .floortiles [data-tile]').each(function() {
-					$('.floortiles-scope').append('<div class="ui-state-default" />');
+					$('.floortiles-scope').append('<div class="ui-state-default"><pre>' + this.outerHTML.replace( /<\//, '...</').replace( /</g, '&lt;').replace( />/g, '&gt;') + '</pre></div>');
 				});
 
 				$('.floor .floortiles').floortiles({
@@ -149,7 +149,7 @@
 					maxCol: 6,
 					tiled: function (el, ui) {
 						el.html(ui.index).wrapInner('<div />');
-						var w = $('.floortiles-scope').width() / 6 - 4,
+/*						var w = $('.floortiles-scope').width() / 6 - 4,
 							h = w * ui.tileSize.y / ui.tileSize.x,
 							htextwrapper = '';
 						for (var i = 0; i < ui.tile.y; i++) {
@@ -159,7 +159,7 @@
 							}
 							htextwrapper += '<div style="width: ' + ((w + 2) * ui.tile.x) + 'px;height: ' + (h + 2) + 'px;">' + htext + '</div>';
 						}
-						$('.floortiles-scope').children().eq(ui.index).html(htextwrapper);
+						$('.floortiles-scope').children().eq(ui.index).html(htextwrapper);*/
 					}
 				});
 

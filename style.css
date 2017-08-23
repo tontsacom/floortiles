@@ -2,6 +2,10 @@ body {
 	margin: 5px;
 	color: #131313;
 }
+pre {
+	margin-bottom: 0;
+	padding: 5px 10px;
+}
 .columns {
 	float: left;
 	margin-right: 20px;
@@ -56,8 +60,7 @@ body {
 }
 .floortiles-scope > div {
 	background: #b9b9b9;
-	cursor: pointer;
-	margin: 5px 0;
+	cursor: ns-resize;
 	padding: 2px;
 	border: 1px solid #dbdbdb;
 }

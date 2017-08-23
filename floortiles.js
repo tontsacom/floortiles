@@ -5,7 +5,7 @@
  */
 (function($) {
 
-	const MAXITERATION = 5000;
+	const MAXITERATION = 700;
 
 	var optionsDefault = {
 		tileSize: {
@@ -119,7 +119,8 @@
 				state.poses.push({
 					x: 0,
 					y: 0,
-					v: 0
+					v: 0,
+					c: this.columns
 				});
 			}
 
@@ -150,7 +151,7 @@
 			for (var i = 0; i < state.tiles.length; i++) {
 				pos = state.poses[i];
 				tile = this.boundSize(state.tiles[i]);
-				tileR = this.boundSizeR(tile, this.columns);
+				tileR = this.boundSizeR(tile, pos.c);// надо поправить, добавив в poses свойство columns
 				posR = {
 					x: step.x * pos.x,
 					y: step.y * pos.v
@@ -207,7 +208,7 @@
 				o;
 
 			this.sitAll(state, columns, start);
-			if (this.debug) console.log(iteration, state.holes.length, state.order.join()); // only for debug purpose
+	//		if (this.debug) console.log(iteration, state.holes.length, state.order.join()); // only for debug purpose
 
 			holes = state.holes.length;
 			tear = this.maxSpaces(state, 0, columns) - this.minSpaces(state, 0, columns);
@@ -396,13 +397,13 @@
 
 				}
 				this.sitAll(state, columns, start);
-				if (this.debug) console.log(iteration, state.holes.length, state.order.join(), this.maxSpaces(state, 0, columns) - this.minSpaces(state, 0, columns)); // only for debug purpose
+	//			if (this.debug) console.log(iteration, state.holes.length, state.order.join()); // only for debug purpose
 
 				n = state.order.join();
 				o = variants.findIndex(function(el) {return el.order == n;});
 				if (o >= 0) {
 					// такая раскладка уже была
-					if (this.debug) console.log('повторяющаяся раскладка: ' + o); // only for debug purpose
+//					if (this.debug) console.log('повторяющаяся раскладка: ' + o); // only for debug purpose
 /*
 					copy = variants.slice(0).sort(function(a, b) {
 						if (a.holes != b.holes) return a.holes - b.holes;
@@ -417,7 +418,7 @@
 					copy.sort(function(a, b) {
 						if (a.holes != b.holes) return a.holes - b.holes;
 						return a.mode - b.mode;
-					});console.log(copy[0].order);
+					});
 
 					if ((copy[0].holes == 0 && copy[0].mode > 3) ||
 							(copy[0].holes > 0 && copy[0].mode > 1)) {
@@ -473,6 +474,8 @@
 			if (holes > 0 && iteration < MAXITERATION) {
 
 				// holes remained and it is necessary to proceed to recursion (decrease the number of columns)
+				// надо переставить плитки (по сортировке poses по принципу compareV и, возможно, надо скорректировать
+				// процедуру tileReshuffle в данном случае, хорошо все видно, если поменять порядок mode в разделе holes > 0)
 				j = this.tileReshuffle(state, start);
 				k = state.order.findIndex(function(el) {return el == j;});
 
@@ -483,11 +486,11 @@
 					state.order[k + l] = copy[l];
 				}
 				this.sitAll(state, columns, start);
-				if (this.debug) console.log(state, columns - 1, iteration, {
+/*				if (this.debug) console.log(state, columns - 1, iteration, {
 						i: k,
 						y: state.poses[state.order[k]].y,
 						v: state.poses[state.order[k]].v
-					}); // only for debug purpose
+					}); // only for debug purpose*/
 
 				return this.assembly(state, columns - 1, iteration, {i: k, y: state.poses[state.order[k]].y, v: state.poses[state.order[k]].v});
 			}
@@ -543,7 +546,8 @@
 				findTile = {
 					x: 0,
 					y: this.maxSpaces(state, 0, columns),
-					v: this.maxSpacesV(state, 0, columns)
+					v: this.maxSpacesV(state, 0, columns),
+					c: columns
 				};
 
 				// define new holes and correct free ends
@@ -617,7 +621,8 @@
 				findTile = {
 					x: holesM[0].x,
 					y: holesM[0].y,
-					v: holesM[0].v
+					v: holesM[0].v,
+					c: columns
 				};
 
 				// define of the placement of a multiple hole
@@ -680,7 +685,8 @@
 			findTile = {
 					x: spacesM[0].x,
 					y: spacesM[0].y,
-					v: spacesM[0].v
+					v: spacesM[0].v,
+					c: columns
 				};
 
 			// define new holes and correct free ends
@@ -745,7 +751,7 @@
 			return {
 				x: Math.max(size.x, sizeM.x),
 				y: Math.max(size.y, sizeM.y)
-			}
+			};
 		}
 
 		minSizeTile(tile) {
@@ -753,7 +759,7 @@
 			if (!size) return {
 				x: 1,
 				y: 1
-			}
+			};
 			return size;
 		}
 
@@ -766,15 +772,15 @@
 
 		boundSizeR(tile, columns) {
 			if (tile.x > columns) return {
-				x: this.columns,
+				x: columns,
 				y: 1,
 				v: tile.y / tile.x * columns
-			}
+			};
 			if (tile.x == columns) return {
 				x: columns,
 				y: 1,
 				v: tile.y
-			}
+			};
 			return {
 				x: tile.x,
 				y: tile.y,
