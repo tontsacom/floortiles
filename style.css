@@ -13,9 +13,16 @@ pre {
 .container {
 	background: #dbdbdb;
 }
+.floortiles-title,
+.floortiles-scope {
+	width: 280px;
+}
+.floortiles-option,
+.floor {
+	width: calc(100% - 300px);
+}
 .floortiles-option {
-	margin: .6em 1.2em 0 0;
-	width: 70%;
+	margin-top: .6em;
 }
 .ui-slider {
 	background: #b9b9b9;
@@ -34,7 +41,6 @@ pre {
 }
 .floor {
 	background: #b9b9b9;
-	width: 100%;
 	margin: 10px auto;
 	padding: 5px 10px;
 }
@@ -58,17 +64,19 @@ pre {
 .floortiles-scope {
 	margin-top: 15px;
 }
-.floortiles-scope > div {
+.floortiles-scope > div:first-child,
+.floortiles-scope > div:last-child,
+.floortiles-clone > div {
 	background: #b9b9b9;
-	cursor: ns-resize;
 	padding: 2px;
 	border: 1px solid #dbdbdb;
 }
-.floortiles-scope > div > div {
-	margin: 0 auto;
+.floortiles-scope > div:first-child,
+.floortiles-scope > div:last-child {
+	cursor: default;
+	margin-right: 1em;
 }
-.floortiles-scope > div > div > div {
-	background: #131313;
-	margin: 1px;
-	display :inline-block;
+.floortiles-clone > div {
+	cursor: ns-resize;
+	margin-left: 1em;
 }
