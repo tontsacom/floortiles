@@ -13,15 +13,11 @@ pre {
 .container {
 	background: #dbdbdb;
 }
-.floortiles-title,
-.floortiles-scope {
+.floortiles-title{
 	width: 280px;
 }
-.floortiles-option,
-.floor {
-	width: calc(100% - 300px);
-}
 .floortiles-option {
+	width: calc(100% - 320px);
 	margin-top: .6em;
 }
 .ui-slider {
@@ -39,7 +35,34 @@ pre {
 .slider-tick-label-container {
 	font-size: 12px;
 }
+.floortiles-scope {
+	width: 400px;
+	margin-top: 15px;
+}
+.floortiles-scope > div:first-child,
+.floortiles-scope > div:last-child,
+.floortiles-clone > div {
+	background: #b9b9b9;
+	padding: 2px;
+	border: 1px solid #dbdbdb;
+}
+.floortiles-clone span {
+	cursor: pointer;
+}
+.floortiles-clone span:hover {
+	color: red;
+}
+.floortiles-scope > div:first-child,
+.floortiles-scope > div:last-child {
+	cursor: default;
+	margin-right: 1em;
+}
+.floortiles-clone > div {
+	cursor: ns-resize;
+	margin-left: 1em;
+}
 .floor {
+	width: calc(100% - 425px);
 	background: #b9b9b9;
 	margin: 10px auto;
 	padding: 5px 10px;
@@ -50,33 +73,14 @@ pre {
 .floortiles-wrapper [data-tile] > div {
 	position: absolute;
 	color: #dbdbdb;
-	width: 40px;
-	height: 40px;
+	width: 36px;
+	height: 36px;
 	top: 50%;
 	left: 50%;
-	margin-top: -20px;
-	margin-left: -20px;
+	margin-top: -18px;
+	margin-left: -18px;
 	text-align: center;
-	line-height: 38px;
+	line-height: 34px;
 	border: 2px solid #dbdbdb;
 	border-radius: 20px;
-}
-.floortiles-scope {
-	margin-top: 15px;
-}
-.floortiles-scope > div:first-child,
-.floortiles-scope > div:last-child,
-.floortiles-clone > div {
-	background: #b9b9b9;
-	padding: 2px;
-	border: 1px solid #dbdbdb;
-}
-.floortiles-scope > div:first-child,
-.floortiles-scope > div:last-child {
-	cursor: default;
-	margin-right: 1em;
-}
-.floortiles-clone > div {
-	cursor: ns-resize;
-	margin-left: 1em;
 }

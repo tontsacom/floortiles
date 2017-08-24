@@ -20,6 +20,7 @@
 		gap: 3,
 		minCol: 2,
 		maxCol: 6,
+		tag: '',
 		animate: true,
 		animateTime: 500,
 		delayResizeTime: 500,
@@ -91,37 +92,56 @@
 		}
 
 		refresh() {
-			if (typeof this.maxWidth == 'number') {
-				this.width = Math.min(this.$element.width(), this.maxWidth);
-			} else if (this.maxWidth == 'none') {
-				this.width = this.$element.width();
-			} else {
-				$.error('Wrong value of property maxWidth in jQuery.floortiles');
-			}
+			this.width = Math.min(this.$element.width(), this.maxWidth);
 			this.columns = Math.max(Math.min(Math.ceil((this.width + this.gap) / this.tileSize.x), this.maxCol), this.minCol);
 
 			var childs = this.$element.find('.floortiles-wrapper').children(),
 				state = {
 					tiles: [],
 					order: [],
+					order2: [],
 					spaces: [],
 					holes: [],
 					poses: []
-				};
+				},
+				size,
+				tags,
+				i = 0,
+				j,
+				k = 0,
+				b;
 
-			for (var i = 0; i < childs.length; i++) {
-				var size = this.minSizeTile(childs.eq(i).data('tile'));
-				state.tiles.push({
-					x: size.x,
-					y: size.y
-				});
-				state.order.push(i);
-				state.poses.push({
-					x: 0,
-					y: 0,
-					v: 0,
-					c: this.columns
-				});
+			this.tags = [];
+			for (; i < childs.length; i++) {
+				tags = childs.eq(i).data('tag').split(' ');
+				b = false;
+				if (this.tag == '') b = true;
+				for (j = 0; j < tags.length; j++) {
+					if (this.tags.indexOf(tags[j]) < 0) this.tags.push(tags[j]);
+					if (!b && this.tag.indexOf(tags[j]) >= 0) b = true;
+				}
+				if (b) {
+					size = this.minSizeTile(childs.eq(i).data('tile'));
+					state.tiles.push({
+						x: size.x,
+						y: size.y
+					});
+					state.order.push(k++);
+					state.order2.push(i);
+					state.poses.push({
+						x: 0,
+						y: 0,
+						v: 0,
+						c: this.columns
+					});
+					childs.eq(i).css({
+						display: 'block'
+					});
+				} else {
+					childs.eq(i).css({
+						display: 'none'
+					});
+				}
 			}
 
 			if (this.debug) var t = performance.now(); // only for debug purpose
@@ -151,7 +171,7 @@
 			for (var i = 0; i < state.tiles.length; i++) {
 				pos = state.poses[i];
 				tile = this.boundSize(state.tiles[i]);
-				tileR = this.boundSizeR(tile, pos.c);// надо поправить, добавив в poses свойство columns
+				tileR = this.boundSizeR(tile, pos.c);
 				posR = {
 					x: step.x * pos.x,
 					y: step.y * pos.v
@@ -161,15 +181,15 @@
 					y: step.y * tileR.v - this.gap
 				};
 
-				this.tiled(childs.eq(i), {
-					index: i, 
+				this.tiled(childs.eq(state.order2[i]), {
+					index: state.order2[i], 
 					tile: tile, 
 					pos: posR,
 					size: sizeR,
 					tileSize: this.tileSize
 				});
 				if (this.animate && this.nextStatus) {
-					childs.eq(i).animate(
+					childs.eq(state.order2[i]).animate(
 						{
 							width: sizeR.x + 'px',
 							height: sizeR.y +'px',
@@ -179,7 +199,7 @@
 						this.animateTime
 					);
 				} else {
-					childs.eq(i).css({
+					childs.eq(state.order2[i]).css({
 						width: sizeR.x + 'px',
 						height: sizeR.y +'px',
 						left: posR.x + 'px',

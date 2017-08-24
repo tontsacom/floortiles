@@ -80,25 +80,25 @@
 							<div data-tile="4x1"></div>
 
 -->
-							<div data-tile="2x1"></div>
-							<div data-tile="3x1"></div>
-							<div data-tile="1x2"></div>
-							<div data-tile="2x3"></div>
-							<div data-tile="1x1"></div>
-							<div data-tile="2x2"></div>
-							<div data-tile="2x2"></div>
-							<div data-tile="2x2"></div>
-							<div data-tile="2x2"></div>
-							<div data-tile="3x2"></div>
-							<div data-tile="1x2"></div>
-							<div data-tile="1x3"></div>
-							<div data-tile="1x3"></div>
-							<div data-tile="2x3"></div>
-							<div data-tile="1x1"></div>
-							<div data-tile="3x1"></div>
-							<div data-tile="1x2"></div>
-							<div data-tile="1x2"></div>
-							<div data-tile="2x1"></div>
+							<div data-tile="2x1" data-tag="on"></div>
+							<div data-tile="3x1" data-tag="on"></div>
+							<div data-tile="1x2" data-tag="on"></div>
+							<div data-tile="2x3" data-tag="on"></div>
+							<div data-tile="1x1" data-tag="on"></div>
+							<div data-tile="2x2" data-tag="on"></div>
+							<div data-tile="2x2" data-tag="on"></div>
+							<div data-tile="2x2" data-tag="on"></div>
+							<div data-tile="2x2" data-tag="on"></div>
+							<div data-tile="3x2" data-tag="on"></div>
+							<div data-tile="1x2" data-tag="on"></div>
+							<div data-tile="1x3" data-tag="on"></div>
+							<div data-tile="1x3" data-tag="on"></div>
+							<div data-tile="2x3" data-tag="on"></div>
+							<div data-tile="1x1" data-tag="on"></div>
+							<div data-tile="3x1" data-tag="on"></div>
+							<div data-tile="1x2" data-tag="on"></div>
+							<div data-tile="1x2" data-tag="on"></div>
+							<div data-tile="2x1" data-tag="on"></div>
 <!--
 
 							<div data-tile="1x1"></div>
@@ -139,14 +139,16 @@
 			jQuery(document).ready(function($) {
 
 				$('.floor .floortiles [data-tile]').each(function() {
-					$('.floortiles-clone').append('<div class="ui-state-default"><pre>' + this.outerHTML.replace( /<\//, '...</').replace( /</g, '&lt;').replace( />/g, '&gt;') + '</pre></div>');
+					$('.floortiles-clone').append('<div class="ui-state-default"><pre>' + this.outerHTML.replace(/<\//, '...</').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace('on', '<span>on</span>') + '</pre></div>');
 				});
 
 				$('.floor .floortiles').floortiles({
 					debug: true,
+					maxWidth: Infinity,
 					tileSize: '160x120',
 					minCol: 2,
 					maxCol: 6,
+					tag: 'on',
 					tiled: function (el, ui) {
 						el.html(ui.index).wrapInner('<div />');
 /*						var w = $('.floortiles-scope').width() / 6 - 4,
@@ -174,7 +176,7 @@
 					},
 					stop: function(event, ui) {
 						$('.floor').css({
-							width: ui.value + '%'
+							width: 'calc(' + ui.value + '% - ' + (4.25 * ui.value) + 'px)'
 						});
 						$('.floortiles').floortiles();
 					}
@@ -214,6 +216,12 @@
 					}
 				});
 				$('.floortiles-scope').disableSelection();
+
+				$('.floortiles-clone span').on('click', function() {
+					$(this).html($(this).html() == 'on' ? 'off' : 'on');
+					$('.floortiles-wrapper [data-tile]').eq($(this).parent().parent().index()).data('tag', $(this).html());
+					$(window).trigger('resize.floortiles');
+				});
 
 			})
 
