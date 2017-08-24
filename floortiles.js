@@ -1,5 +1,5 @@
 /*!
- * FloorTiles v1.3 (https://github.com/tontsacom/floortiles)
+ * FloorTiles v1.4 (https://github.com/tontsacom/floortiles)
  * Copyright 2017
  * Licensed under the MIT license
  */
