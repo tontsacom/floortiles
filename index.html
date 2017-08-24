@@ -219,6 +219,7 @@
 
 				$('.floortiles-clone span').on('click', function() {
 					$(this).html($(this).html() == 'on' ? 'off' : 'on');
+					$(this).toggleClass('off');
 					$('.floortiles-wrapper [data-tile]').eq($(this).parent().parent().index()).data('tag', $(this).html());
 					$(window).trigger('resize.floortiles');
 				});

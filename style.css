@@ -49,7 +49,7 @@ pre {
 .floortiles-clone span {
 	cursor: pointer;
 }
-.floortiles-clone span:hover {
+.floortiles-clone span.off {
 	color: red;
 }
 .floortiles-scope > div:first-child,
