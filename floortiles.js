@@ -56,9 +56,8 @@
 
 			$.extend(this, optionsDefault);
 
-			this.nextStatus = false;
 			this.reset(options);
-			this.nextStatus = true;
+			this.$element.data('floortiles', this);
 		}
 
 		destructor() {
@@ -113,12 +112,16 @@
 
 			this.tags = [];
 			for (; i < childs.length; i++) {
-				tags = childs.eq(i).data('tag').split(' ');
-				b = false;
-				if (this.tag == '') b = true;
-				for (j = 0; j < tags.length; j++) {
-					if (this.tags.indexOf(tags[j]) < 0) this.tags.push(tags[j]);
-					if (!b && this.tag.indexOf(tags[j]) >= 0) b = true;
+				if (tags = childs.eq(i).data('tag')) {
+					tags = tags.split(' ');
+					b = false;
+					if (this.tag == '') b = true;
+					for (j = 0; j < tags.length; j++) {
+						if (this.tags.indexOf(tags[j]) < 0) this.tags.push(tags[j]);
+						if (!b && this.tag.indexOf(tags[j]) >= 0) b = true;
+					}
+				} else {
+					b = true;
 				}
 				if (b) {
 					size = this.minSizeTile(childs.eq(i).data('tile'));
@@ -188,7 +191,7 @@
 					size: sizeR,
 					tileSize: this.tileSize
 				});
-				if (this.animate && this.nextStatus) {
+				if (this.animate && this.$element.data('floortiles')) {
 					childs.eq(state.order2[i]).animate(
 						{
 							width: sizeR.x + 'px',
@@ -228,7 +231,7 @@
 				o;
 
 			this.sitAll(state, columns, start);
-	//		if (this.debug) console.log(iteration, state.holes.length, state.order.join()); // only for debug purpose
+			//if (this.debug) console.log(iteration, state.holes.length, state.order.join()); // only for debug purpose
 
 			holes = state.holes.length;
 			tear = this.maxSpaces(state, 0, columns) - this.minSpaces(state, 0, columns);
@@ -417,19 +420,19 @@
 
 				}
 				this.sitAll(state, columns, start);
-	//			if (this.debug) console.log(iteration, state.holes.length, state.order.join()); // only for debug purpose
+				//if (this.debug) console.log(iteration, state.holes.length, state.order.join()); // only for debug purpose
 
 				n = state.order.join();
 				o = variants.findIndex(function(el) {return el.order == n;});
 				if (o >= 0) {
 					// такая раскладка уже была
-//					if (this.debug) console.log('повторяющаяся раскладка: ' + o); // only for debug purpose
-/*
-					copy = variants.slice(0).sort(function(a, b) {
+					//if (this.debug) console.log('повторяющаяся раскладка: ' + o); // only for debug purpose
+
+					/*copy = variants.slice(0).sort(function(a, b) {
 						if (a.holes != b.holes) return a.holes - b.holes;
 						return a.mode - b.mode;
-					});
-*/
+					});*/
+
 					copy = variants.slice(0).sort(function(a, b) {
 						if (a.holes != b.holes) return a.holes - b.holes;
 						return a.tear - b.tear;
@@ -506,11 +509,11 @@
 					state.order[k + l] = copy[l];
 				}
 				this.sitAll(state, columns, start);
-/*				if (this.debug) console.log(state, columns - 1, iteration, {
-						i: k,
-						y: state.poses[state.order[k]].y,
-						v: state.poses[state.order[k]].v
-					}); // only for debug purpose*/
+				/*if (this.debug) console.log(state, columns - 1, iteration, {
+					i: k,
+					y: state.poses[state.order[k]].y,
+					v: state.poses[state.order[k]].v
+				}); // only for debug purpose*/
 
 				return this.assembly(state, columns - 1, iteration, {i: k, y: state.poses[state.order[k]].y, v: state.poses[state.order[k]].v});
 			}
@@ -742,11 +745,11 @@
 			if (a.x != b.x) return a.x - b.x;
 			return a.y - b.y;
 		}
-/*
-		onSit(el, ui) {
+
+		/*onSit(el, ui) {
 			console.log(this);console.log(el);console.log(ui);
-		}
-*/
+		}*/
+
 		step() {
 			var w = Math.min(Math.round(((this.width + this.gap) / this.columns) - this.gap), this.tileSize.x);
 			return {
@@ -869,7 +872,7 @@
 					data.reset(options);
 				}
 
-				$this.data('floortiles', data);
+//				$this.data('floortiles', data);
 			});
 		},
 
