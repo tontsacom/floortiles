@@ -146,6 +146,7 @@
 					});
 				}
 			}
+			this.tags.sort();
 
 			if (this.debug) var t = performance.now(); // only for debug purpose
 
@@ -185,12 +186,23 @@
 				};
 
 				this.tiled(childs.eq(state.order2[i]), {
-					index: state.order2[i], 
-					tile: tile, 
+					index: state.order2[i],
+					tile: tile,
 					pos: posR,
 					size: sizeR,
 					tileSize: this.tileSize
 				});
+				this.$element.trigger('sited.floortiles', {
+					el: childs.eq(state.order2[i]),
+					ui: {
+						index: state.order2[i],
+						tile: tile,
+						pos: posR,
+						size: sizeR,
+						tileSize: this.tileSize
+					}
+				});
+				//jQuery.proxy( function, context )
 				if (this.animate && this.$element.data('floortiles')) {
 					childs.eq(state.order2[i]).animate(
 						{
@@ -869,6 +881,10 @@
 			return this.each(function() {
 				$(this).data('floortiles').refresh();
 			});
+		},
+
+		gettags: function() {
+			return $(this.eq(0)).data('floortiles').tags;
 		},
 
 		destroy: function() {

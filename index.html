@@ -142,16 +142,21 @@
 					$('.floortiles-clone').append('<div class="ui-state-default"><pre>' + this.outerHTML.replace(/<\//, '...</').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace('on', '<span>on</span>') + '</pre></div>');
 				});
 
+				$('.floor .floortiles').on('sited.floortiles', function(event, eventObj) {
+					//console.log(event, ui, this);
+					eventObj.el.html(eventObj.ui.index).wrapInner('<div />');
+				});
+
 				$('.floor .floortiles').floortiles({
 					debug: true,
 					maxWidth: Infinity,
 					tileSize: '160x120',
 					minCol: 2,
 					maxCol: 6,
-					tag: 'on',
+					tag: 'on'/*,
 					tiled: function (el, ui) {
 						el.html(ui.index).wrapInner('<div />');
-					}
+					}*/
 				});
 
 				$('.floortiles-width').slider({
